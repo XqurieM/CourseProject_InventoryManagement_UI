@@ -1,0 +1,7 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/InventoryManagement.UI/bin/Debug/net8.0
+/InventoryManagement.UI/obj
