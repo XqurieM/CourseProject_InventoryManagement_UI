@@ -1,2 +1,106 @@
-@{ ViewData["Title"] = "Item Detail"; }
-<div class="row g-3"><div class="col-lg-8"><div class="card"><div class="card-header d-flex justify-content-between"><h5 class="mb-0">BOOK-000184 · Clean Code</h5><a class="btn btn-sm btn-primary" asp-action="Edit" asp-route-id="1">Edit item</a></div><div class="card-body"><dl class="row"><dt class="col-sm-3">Inventory</dt><dd class="col-sm-9"><a asp-controller="Inventory" asp-action="Details" asp-route-id="1">Library Books 2026</a></dd><dt class="col-sm-3">Custom ID</dt><dd class="col-sm-9"><code>BOOK-000184</code></dd><dt class="col-sm-3">Title</dt><dd class="col-sm-9">Clean Code</dd><dt class="col-sm-3">Authors</dt><dd class="col-sm-9">Robert C. Martin</dd><dt class="col-sm-3">Year</dt><dd class="col-sm-9">2008</dd><dt class="col-sm-3">Annotation</dt><dd class="col-sm-9">A handbook of agile software craftsmanship.</dd><dt class="col-sm-3">Document link</dt><dd class="col-sm-9"><a href="#">Preview document</a></dd><dt class="col-sm-3">Created by</dt><dd class="col-sm-9">Nora Stone · Today 09:12</dd></dl></div></div></div><div class="col-lg-4"><div class="card"><div class="card-body text-center"><button class="btn btn-outline-danger btn-lg"><i class="fa-solid fa-heart"></i> 24 likes</button><div class="small text-muted mt-2">One like per user design</div></div></div><div class="card mt-3"><div class="card-header"><h5 class="mb-0">Optimistic locking</h5></div><div class="card-body"><code>Version: 19</code><p class="small text-muted mt-2 mb-0">Later update requests should include this version.</p></div></div></div></div>
+@model ItemDetailsPageViewModel
+@{
+    ViewData["Title"] = "Item Detail";
+}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="text-muted small">Inventory</div>
+                        <h5 class="mb-0">@Model.InventoryTitle</h5>
+                    </div>
+                    <div class="d-flex gap-2">
+                        @if (Model.CanWriteItems)
+                        {
+                            <a class="btn btn-primary btn-sm" asp-action="Edit" asp-route-id="@Model.Item.Id" asp-route-inventoryId="@Model.InventoryId">Edit item</a>
+                        }
+                        <a class="btn btn-outline-secondary btn-sm" asp-controller="Inventory" asp-action="Details" asp-route-id="@Model.InventoryId">Back</a>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="badge @(Model.Item.IsLikedByCurrentUser ? "text-bg-danger" : "text-bg-light") px-3 py-2">
+                        <i class="fa-solid fa-heart me-1"></i>@Model.Item.LikeCount like(s)
+                    </span>
+                    <form asp-action="ToggleLike" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Item.Id" />
+                        <input type="hidden" name="inventoryId" value="@Model.InventoryId" />
+                        <button class="btn @(Model.Item.IsLikedByCurrentUser ? "btn-outline-danger" : "btn-outline-primary") btn-sm" type="submit">
+                            @(Model.Item.IsLikedByCurrentUser ? "Unlike" : "Like")
+                        </button>
+                    </form>
+                </div>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Custom ID</dt>
+                    <dd class="col-sm-7"><code>@Model.Item.CustomId</code></dd>
+                    <dt class="col-sm-5">Name</dt>
+                    <dd class="col-sm-7">@Model.Item.ItemName</dd>
+                    <dt class="col-sm-5">Created</dt>
+                    <dd class="col-sm-7">@Model.Item.CreateAtUtc.ToLocalTime().ToString("g")</dd>
+                    <dt class="col-sm-5">Updated</dt>
+                    <dd class="col-sm-7">@Model.Item.UpdatedAtUtc.ToLocalTime().ToString("g")</dd>
+                </dl>
+                @if (Model.CanWriteItems)
+                {
+                    <hr />
+                    <form asp-action="Delete" method="post" onsubmit="return confirm('Delete this item?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Item.Id" />
+                        <input type="hidden" name="inventoryId" value="@Model.InventoryId" />
+                        <button class="btn btn-outline-danger btn-sm" type="submit">Delete item</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Field values</h5>
+                    <span class="badge text-bg-primary">@Model.FieldValues.Count value(s)</span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.HelperText))
+                {
+                    <div class="alert alert-light border">@Model.HelperText</div>
+                }
+                @if (Model.FieldValues.Count == 0)
+                {
+                    <div class="text-muted">No field values were returned for this item yet.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Value</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var field in Model.FieldValues)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@field.Label</div>
+                                        @if (!string.IsNullOrWhiteSpace(field.Description))
+                                        {
+                                            <div class="small text-muted">@field.Description</div>
+                                        }
+                                    </td>
+                                    <td>@field.DisplayValue</td>
+                                    <td>@field.FieldType</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

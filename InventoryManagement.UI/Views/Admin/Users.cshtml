@@ -1,6 +1,260 @@
+@model AdminUsersPageViewModel
 @{
     ViewData["Title"] = "Admin User Management";
 }
-<div class="card mb-3"><div class="card-body"><div class="row g-2"><div class="col-md-4"><input class="form-control" placeholder="Search user by name or email" /></div><div class="col-md-2"><select class="form-select"><option>All roles</option><option>Admin</option><option>User</option></select></div><div class="col-md-2"><select class="form-select"><option>All statuses</option><option>Active</option><option>Blocked</option></select></div><div class="col-md-2"><select class="form-select"><option>Sort by name</option><option>Sort by email</option><option>Newest</option></select></div><div class="col-md-2"><button class="btn btn-outline-primary w-100">Apply</button></div></div></div></div>
-<div class="card"><div class="card-header"><h5 class="mb-0">Users</h5></div><div class="card-body table-responsive p-0"><table class="table table-hover mb-0"><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Owned inventories</th><th>Writable access</th><th>Admin actions</th></tr></thead><tbody><tr><td><a asp-controller="Profile" asp-action="Index">Alex Morgan</a></td><td>alex@example.com</td><td><span class="badge text-bg-danger">Admin</span></td><td><span class="badge text-bg-success">Active</span></td><td>12</td><td>38</td><td><div class="btn-group btn-group-sm"><button class="btn btn-outline-warning">Block</button><button class="btn btn-outline-secondary">Revoke admin</button><button class="btn btn-outline-danger">Delete</button></div></td></tr><tr><td>Nora Stone</td><td>nora@example.com</td><td>User</td><td><span class="badge text-bg-success">Active</span></td><td>4</td><td>18</td><td><div class="btn-group btn-group-sm"><button class="btn btn-outline-warning">Block</button><button class="btn btn-outline-primary">Grant admin</button><button class="btn btn-outline-danger">Delete</button></div></td></tr><tr><td>Blocked User</td><td>blocked@example.com</td><td>User</td><td><span class="badge text-bg-dark">Blocked</span></td><td>0</td><td>0</td><td><div class="btn-group btn-group-sm"><button class="btn btn-outline-success">Unblock</button><button class="btn btn-outline-primary">Grant admin</button><button class="btn btn-outline-danger">Delete</button></div></td></tr></tbody></table></div></div>
-<div class="alert alert-warning mt-3"><b>Design note:</b> Admin can revoke their own admin role, as required. Buttons are visible in UI and can be wired later.</div>
+<style>
+    .admin-user-row {
+        cursor: pointer;
+        transition: background-color .15s ease, box-shadow .15s ease;
+    }
+
+    .admin-user-row.is-selected {
+        background-color: rgba(13, 110, 253, 0.08);
+        box-shadow: inset 4px 0 0 #0d6efd;
+    }
+
+    .admin-user-row td:first-child {
+        width: 56px;
+    }
+
+    .admin-selection-summary {
+        border: 1px solid rgba(13, 110, 253, 0.18);
+        background: rgba(13, 110, 253, 0.05);
+        border-radius: .75rem;
+        padding: 1rem 1.1rem;
+    }
+</style>
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-md-4"><input class="form-control" name="query" value="@Model.Query" placeholder="Search user by name or email" /></div>
+            <div class="col-md-2">
+                <select class="form-select" name="role">
+                    @if (Model.Role == "all")
+                    {
+                        <option value="all" selected>All roles</option>
+                    }
+                    else
+                    {
+                        <option value="all">All roles</option>
+                    }
+                    @if (Model.Role == "admin")
+                    {
+                        <option value="admin" selected>Admin</option>
+                    }
+                    else
+                    {
+                        <option value="admin">Admin</option>
+                    }
+                    @if (Model.Role == "user")
+                    {
+                        <option value="user" selected>User</option>
+                    }
+                    else
+                    {
+                        <option value="user">User</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="status">
+                    @if (Model.Status == "all")
+                    {
+                        <option value="all" selected>All statuses</option>
+                    }
+                    else
+                    {
+                        <option value="all">All statuses</option>
+                    }
+                    @if (Model.Status == "active")
+                    {
+                        <option value="active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="active">Active</option>
+                    }
+                    @if (Model.Status == "blocked")
+                    {
+                        <option value="blocked" selected>Blocked</option>
+                    }
+                    else
+                    {
+                        <option value="blocked">Blocked</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="sort">
+                    @if (Model.Sort == "name")
+                    {
+                        <option value="name" selected>Sort by name</option>
+                    }
+                    else
+                    {
+                        <option value="name">Sort by name</option>
+                    }
+                    @if (Model.Sort == "email")
+                    {
+                        <option value="email" selected>Sort by email</option>
+                    }
+                    else
+                    {
+                        <option value="email">Sort by email</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2"><button class="btn btn-outline-primary w-100">Apply</button></div>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">Users</h5></div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th style="width:56px">Select</th><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Preferences</th></tr></thead>
+            <tbody>
+            @foreach (var user in Model.Users)
+            {
+                <tr class="admin-user-row"
+                    data-user-id="@user.Id"
+                    data-user-name="@user.UserName"
+                    data-user-email="@user.Email"
+                    data-user-is-admin="@user.IsAdmin.ToString().ToLowerInvariant()"
+                    data-user-is-blocked="@user.IsBlocked.ToString().ToLowerInvariant()">
+                    <td>
+                        <input class="form-check-input admin-user-selector" type="radio" name="selectedUser" value="@user.Id" />
+                    </td>
+                    <td><a asp-action="UserDetails" asp-route-id="@user.Id" class="text-decoration-none fw-semibold">@user.UserName</a></td>
+                    <td>@user.Email</td>
+                    <td><span class="badge @(user.IsAdmin ? "text-bg-danger" : "text-bg-secondary")">@(user.IsAdmin ? "Admin" : "User")</span></td>
+                    <td><span class="badge @(user.IsBlocked ? "text-bg-dark" : "text-bg-success")">@(user.IsBlocked ? "Blocked" : "Active")</span></td>
+                    <td>@user.PreferredLanguage / @user.PreferredTheme</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header"><h5 class="mb-0">Selected User Actions</h5></div>
+    <div class="card-body">
+        <div class="admin-selection-summary mb-3">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <div class="text-muted small text-uppercase">Current selection</div>
+                    <div class="fw-semibold fs-5" id="selectedAdminUserName">Choose a user from the table</div>
+                    <div class="small text-muted" id="selectedAdminUserMeta">Actions will appear here after selection.</div>
+                </div>
+                <div class="text-end small text-muted">
+                    Use the table only for selection.<br />
+                    Manage the selected user from this panel.
+                </div>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <form asp-action="Block" method="post" class="admin-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" class="selected-admin-user-id" />
+                <button class="btn btn-outline-warning" type="submit" id="blockUserButton" disabled>Block</button>
+            </form>
+            <form asp-action="Unblock" method="post" class="admin-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" class="selected-admin-user-id" />
+                <button class="btn btn-outline-success" type="submit" id="unblockUserButton" disabled>Unblock</button>
+            </form>
+            <form asp-action="GrantAdmin" method="post" class="admin-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" class="selected-admin-user-id" />
+                <button class="btn btn-outline-primary" type="submit" id="grantAdminButton" disabled>Grant admin</button>
+            </form>
+            <form asp-action="RevokeAdmin" method="post" class="admin-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" class="selected-admin-user-id" />
+                <button class="btn btn-outline-secondary" type="submit" id="revokeAdminButton" disabled>Revoke admin</button>
+            </form>
+            <form asp-action="Delete" method="post" class="admin-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" class="selected-admin-user-id" />
+                <button class="btn btn-outline-danger" type="submit" id="deleteUserButton" disabled>Delete</button>
+            </form>
+        </div>
+        <div class="small text-muted mt-3">
+            Select a row in the table, then use the management actions here. Buttons are intentionally kept outside table rows.
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const rows = Array.from(document.querySelectorAll('.admin-user-row'));
+        const selectors = Array.from(document.querySelectorAll('.admin-user-selector'));
+        const hiddenInputs = Array.from(document.querySelectorAll('.selected-admin-user-id'));
+        const nameTarget = document.getElementById('selectedAdminUserName');
+        const metaTarget = document.getElementById('selectedAdminUserMeta');
+        const blockButton = document.getElementById('blockUserButton');
+        const unblockButton = document.getElementById('unblockUserButton');
+        const grantAdminButton = document.getElementById('grantAdminButton');
+        const revokeAdminButton = document.getElementById('revokeAdminButton');
+        const deleteUserButton = document.getElementById('deleteUserButton');
+
+        function setDisabledState(disabled) {
+            [blockButton, unblockButton, grantAdminButton, revokeAdminButton, deleteUserButton]
+                .filter(Boolean)
+                .forEach(button => button.disabled = disabled);
+        }
+
+        function selectRow(row) {
+            if (!row) {
+                setDisabledState(true);
+                return;
+            }
+
+            const userId = row.dataset.userId;
+            const userName = row.dataset.userName;
+            const userEmail = row.dataset.userEmail;
+            const isAdmin = row.dataset.userIsAdmin === 'true';
+            const isBlocked = row.dataset.userIsBlocked === 'true';
+
+            selectors.forEach(selector => {
+                selector.checked = selector.value === userId;
+            });
+
+            rows.forEach(currentRow => currentRow.classList.remove('is-selected'));
+            row.classList.add('is-selected');
+
+            hiddenInputs.forEach(input => input.value = userId);
+            if (nameTarget) nameTarget.textContent = userName;
+            if (metaTarget) metaTarget.textContent = `${userEmail} • ${isAdmin ? 'Admin' : 'User'} • ${isBlocked ? 'Blocked' : 'Active'}`;
+
+            setDisabledState(false);
+            if (blockButton) blockButton.disabled = isBlocked;
+            if (unblockButton) unblockButton.disabled = !isBlocked;
+            if (grantAdminButton) grantAdminButton.disabled = isAdmin;
+            if (revokeAdminButton) revokeAdminButton.disabled = !isAdmin;
+        }
+
+        rows.forEach(row => {
+            row.addEventListener('click', function (event) {
+                if (event.target.closest('input, button, form, a, select, textarea, label')) {
+                    return;
+                }
+                selectRow(row);
+            });
+        });
+
+        selectors.forEach(selector => {
+            selector.addEventListener('change', function () {
+                const row = selector.closest('.admin-user-row');
+                selectRow(row);
+            });
+        });
+
+        if (rows.length > 0) {
+            selectRow(rows[0]);
+        } else {
+            setDisabledState(true);
+        }
+    });
+</script>

@@ -1,0 +1,114 @@
+@model AdminLocalizationPageViewModel
+@{
+    ViewData["Title"] = "Localization Resources";
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-2">
+                    <div class="col-md-3"><input class="form-control" name="languageCode" value="@Model.LanguageCode" placeholder="tr / en" /></div>
+                    <div class="col-md-3"><input class="form-control" name="pageName" value="@Model.PageName" placeholder="shared / dashboard" /></div>
+                    <div class="col-md-3"><input class="form-control" name="resourceKey" value="@Model.ResourceKey" placeholder="resource key" /></div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="isActive">
+                            <option value="">All states</option>
+                            @if (Model.IsActive == true)
+                            {
+                                <option value="true" selected>Active</option>
+                            }
+                            else
+                            {
+                                <option value="true">Active</option>
+                            }
+                            @if (Model.IsActive == false)
+                            {
+                                <option value="false" selected>Inactive</option>
+                            }
+                            else
+                            {
+                                <option value="false">Inactive</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-1"><button class="btn btn-outline-primary w-100">Go</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Quick add</h6></div>
+            <div class="card-body">
+                <form asp-action="CreateLocalization" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2"><input asp-for="NewResource.LanguageCode" class="form-control" placeholder="Language code" /></div>
+                    <div class="mb-2"><input asp-for="NewResource.PageName" class="form-control" placeholder="Page name" /></div>
+                    <div class="mb-2"><input asp-for="NewResource.ResourceKey" class="form-control" placeholder="Resource key" /></div>
+                    <div class="mb-2"><textarea asp-for="NewResource.Value" class="form-control" rows="3" placeholder="Value"></textarea></div>
+                    <div class="form-check mb-3">
+                        <input asp-for="NewResource.IsActive" class="form-check-input" />
+                        <label asp-for="NewResource.IsActive" class="form-check-label">Active</label>
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit">Create resource</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Visible resources</h5>
+        <span class="small text-muted">@Model.Resources.Count row(s)</span>
+    </div>
+    <div class="card-body">
+        @if (Model.Resources.Count == 0)
+        {
+            <div class="alert alert-light border mb-0">No resources match the current filters.</div>
+        }
+        else
+        {
+            <form asp-action="SaveLocalization" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="LanguageCode" value="@Model.LanguageCode" />
+                <input type="hidden" name="PageName" value="@Model.PageName" />
+                <input type="hidden" name="ResourceKey" value="@Model.ResourceKey" />
+                @if (Model.IsActive.HasValue)
+                {
+                    <input type="hidden" name="IsActive" value="@Model.IsActive.Value.ToString().ToLowerInvariant()" />
+                }
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>Key</th><th>Language</th><th>Page</th><th>Value</th><th>Active</th><th>Delete</th></tr></thead>
+                        <tbody>
+                        @for (var i = 0; i < Model.Resources.Count; i++)
+                        {
+                            <tr>
+                                <td>
+                                    <input asp-for="Resources[i].Id" type="hidden" />
+                                    <input asp-for="Resources[i].ResourceKey" class="form-control" />
+                                </td>
+                                <td><input asp-for="Resources[i].LanguageCode" class="form-control" /></td>
+                                <td><input asp-for="Resources[i].PageName" class="form-control" /></td>
+                                <td><textarea asp-for="Resources[i].Value" class="form-control" rows="2"></textarea></td>
+                                <td><input asp-for="Resources[i].IsActive" class="form-check-input mt-0" /></td>
+                                <td class="text-end">
+                                    @if (Model.Resources[i].Id.HasValue)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger" type="submit" formaction="@Url.Action("DeleteLocalization", "Admin", new { id = Model.Resources[i].Id })" formmethod="post">Delete</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary" type="submit">Save visible resources</button>
+                </div>
+            </form>
+        }
+    </div>
+</div>

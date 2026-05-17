@@ -1,2 +1,245 @@
-@{ Layout = null; }
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Login - Inventory Management</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/><style>body{min-height:100vh;background:linear-gradient(135deg,#0d6efd,#6610f2);display:flex;align-items:center}.login-card{border:0;border-radius:1.25rem;box-shadow:0 1rem 3rem rgba(0,0,0,.25)}</style></head><body><div class="container"><div class="row justify-content-center"><div class="col-md-5"><div class="card login-card"><div class="card-body p-5"><h2 class="fw-bold mb-1">Welcome back</h2><p class="text-muted">Sign in to manage inventories.</p><label class="form-label">Email</label><input class="form-control form-control-lg mb-3" value="alex@example.com"/><label class="form-label">Password</label><input type="password" class="form-control form-control-lg mb-3" value="password"/><a class="btn btn-primary btn-lg w-100" href="/">Login prototype</a><div class="text-center my-3 text-muted">or</div><div class="d-grid gap-2"><button class="btn btn-outline-danger"><i class="fa-brands fa-google me-2"></i>Continue with Google</button><button class="btn btn-outline-primary"><i class="fa-brands fa-facebook me-2"></i>Continue with Facebook</button></div><hr/><a href="/Account/Register">Create account</a></div></div></div></div></div></body></html>
+@inject IConfiguration Configuration
+@model LoginPageViewModel
+@{
+    Layout = null;
+    var microsoftClientId = Configuration["MicrosoftLogin:ClientId"] ?? string.Empty;
+    var microsoftTenantId = Configuration["MicrosoftLogin:TenantId"] ?? string.Empty;
+    var isMicrosoftLoginConfigured = !string.IsNullOrWhiteSpace(microsoftClientId) && !string.IsNullOrWhiteSpace(microsoftTenantId);
+}
+<!DOCTYPE html>
+<html lang="@(((ViewData["LocalizationState"] as UiLocalizationViewModel)?.LanguageCode) ?? "tr")">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@Html.T("title", "Login") - @Html.T("shared.app.name", "Inventory Management")</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body { min-height: 100vh; background: linear-gradient(135deg,#0d6efd,#6610f2); display: flex; align-items: center; }
+        .login-card { border: 0; border-radius: 1.25rem; box-shadow: 0 1rem 3rem rgba(0,0,0,.25); }
+        .google-btn-container { display: flex; justify-content: center; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card login-card">
+                    <div class="card-body p-5">
+                        <h2 class="fw-bold mb-1">@Html.T("hero.title", "Welcome back")</h2>
+                        <p class="text-muted">@Html.T("hero.subtitle", "Sign in to manage inventories.")</p>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                        {
+                            <div class="alert alert-danger">@Model.ErrorMessage</div>
+                        }
+
+                        <form asp-action="Login" method="post">
+                            @Html.AntiForgeryToken()
+                            <label class="form-label">@Html.T("form.identity", "Email or user name")</label>
+                            <input asp-for="Form.EmailOrUserName" class="form-control form-control-lg mb-3" />
+                            <span asp-validation-for="Form.EmailOrUserName" class="text-danger small"></span>
+
+                            <label class="form-label">@Html.T("form.password", "Password")</label>
+                            <input asp-for="Form.Password" type="password" class="form-control form-control-lg mb-3" />
+                            <span asp-validation-for="Form.Password" class="text-danger small"></span>
+
+                            <button class="btn btn-primary btn-lg w-100" type="submit">@Html.T("form.submit", "Sign in")</button>
+                        </form>
+
+                        <div class="text-center my-3 text-muted">@Html.T("divider.or", "or")</div>
+
+                        <div class="d-grid gap-2">
+                            <div id="g_id_onload"
+                                 data-client_id="422459194138-2pgs4h3tnbu9evi92amedpeg3vchjrk1.apps.googleusercontent.com"
+                                 data-context="signin"
+                                 data-ux_mode="popup"
+                                 data-callback="onGoogleSignIn"
+                                 data-auto_prompt="false">
+                            </div>
+
+                            <div class="google-btn-container">
+                                <div class="g_id_signin"
+                                     data-type="standard"
+                                     data-shape="rectangular"
+                                     data-theme="outline"
+                                     data-text="signin_with"
+                                     data-size="large"
+                                     data-logo_alignment="left"
+                                     data-width="400">
+                                </div>
+                            </div>
+
+                            @if (isMicrosoftLoginConfigured)
+                            {
+                                <button class="btn btn-outline-primary" type="button" onclick="onMicrosoftSignIn()">
+                                    <i class="fa-brands fa-microsoft me-2"></i>@Html.T("social.microsoft", "Continue with Microsoft")
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-primary" type="button" disabled>
+                                    <i class="fa-brands fa-microsoft me-2"></i>@Html.T("social.microsoft", "Continue with Microsoft")
+                                </button>
+                            }
+
+                        </div>
+
+                        <hr />
+                        <div class="text-center">
+                            <a asp-action="Register">@Html.T("link.register", "Create account")</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const microsoftLoginConfig = {
+            clientId: '@microsoftClientId',
+            tenantId: '@microsoftTenantId'
+        };
+        let microsoftLoginState = null;
+
+        async function onGoogleSignIn(response) {
+            const idToken = response?.credential;
+            if (!idToken) {
+                alert("Google token alinamadi.");
+                return;
+            }
+
+            try {
+                const res = await fetch('@Url.Action("ExternalLoginGoogle", "Account")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ token: idToken })
+                });
+
+                const contentType = res.headers.get('content-type') ?? '';
+                const data = contentType.includes('application/json')
+                    ? await res.json()
+                    : await res.text();
+
+                if (!res.ok || !data?.success) {
+                    const message = typeof data === 'object'
+                        ? (data.message ?? 'Google sign-in failed.')
+                        : data;
+                    alert(message);
+                    return;
+                }
+
+                window.location.href = data.redirectUrl || '/Home/Index';
+            } catch (error) {
+                console.error('Google sign-in error:', error);
+                alert('Google sign-in su anda tamamlanamadi.');
+            }
+        }
+
+        function createMicrosoftState() {
+            return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        }
+
+        async function submitMicrosoftToken(idToken) {
+            if (!microsoftLoginConfig.clientId || !microsoftLoginConfig.tenantId) {
+                alert('Microsoft sign-in configuration is missing.');
+                return;
+            }
+            const res = await fetch('@Url.Action("ExternalLoginMicrosoft", "Account")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ token: idToken })
+            });
+
+            const contentType = res.headers.get('content-type') ?? '';
+            const data = contentType.includes('application/json')
+                ? await res.json()
+                : await res.text();
+
+            if (!res.ok || !data?.success) {
+                const message = typeof data === 'object'
+                    ? (data.message ?? 'Microsoft sign-in failed.')
+                    : data;
+                alert(message);
+                return;
+            }
+
+            window.location.href = data.redirectUrl || '/Home/Index';
+        }
+
+        async function onMicrosoftSignIn() {
+            if (!microsoftLoginConfig.clientId || !microsoftLoginConfig.tenantId) {
+                alert('Microsoft sign-in configuration is missing.');
+                return;
+            }
+
+            try {
+                microsoftLoginState = createMicrosoftState();
+                const nonce = createMicrosoftState();
+                const redirectUri = `${window.location.origin}/Account/MicrosoftCallback`;
+                const authorizeUrl = new URL(`https://login.microsoftonline.com/${microsoftLoginConfig.tenantId}/oauth2/v2.0/authorize`);
+                authorizeUrl.searchParams.set('client_id', microsoftLoginConfig.clientId);
+                authorizeUrl.searchParams.set('response_type', 'id_token');
+                authorizeUrl.searchParams.set('redirect_uri', redirectUri);
+                authorizeUrl.searchParams.set('response_mode', 'fragment');
+                authorizeUrl.searchParams.set('scope', 'openid profile email');
+                authorizeUrl.searchParams.set('state', microsoftLoginState);
+                authorizeUrl.searchParams.set('nonce', nonce);
+                authorizeUrl.searchParams.set('prompt', 'select_account');
+
+                const popup = window.open(
+                    authorizeUrl.toString(),
+                    'microsoft-login',
+                    'width=520,height=680,left=200,top=120'
+                );
+
+                if (!popup) {
+                    alert('Microsoft popup could not be opened. Please allow popups for this site.');
+                    return;
+                }
+            } catch (error) {
+                console.error('Microsoft sign-in error:', error);
+                alert(error?.message || 'Microsoft sign-in su anda tamamlanamadi.');
+            }
+        }
+
+        window.addEventListener('message', async (event) => {
+            if (event.origin !== window.location.origin) {
+                return;
+            }
+
+            const data = event.data;
+            if (!data || data.source !== 'inventory-management-microsoft-login') {
+                return;
+            }
+
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            if (!data.idToken) {
+                alert('Microsoft token alinamadi.');
+                return;
+            }
+
+            if (!microsoftLoginState || data.state !== microsoftLoginState) {
+                alert('Microsoft sign-in state could not be verified.');
+                return;
+            }
+
+            microsoftLoginState = null;
+            await submitMicrosoftToken(data.idToken);
+        });
+
+        window.onMicrosoftSignIn = onMicrosoftSignIn;
+    </script>
+</body>
+</html>

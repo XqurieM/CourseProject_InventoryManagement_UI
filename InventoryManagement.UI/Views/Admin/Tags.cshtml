@@ -1,0 +1,105 @@
+@model AdminTagsPageViewModel
+@{
+    ViewData["Title"] = "Tags";
+}
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Tag list</h5>
+                <span class="badge text-bg-primary">@Model.Tags.Count</span>
+            </div>
+            <div class="card-body border-bottom">
+                <form method="get" class="row g-2">
+                    <div class="col-md-9">
+                        <input class="form-control" name="query" value="@Model.Query" placeholder="Search tag name" />
+                    </div>
+                    <div class="col-md-3 d-grid">
+                        <button class="btn btn-outline-primary" type="submit">Search</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Normalized</th>
+                                <th>Used in inventories</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var tag in Model.Tags)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@tag.Name</td>
+                                <td><code>@tag.NormalizedName</code></td>
+                                <td>@tag.InventoryCount</td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       asp-action="Tags"
+                                       asp-route-editId="@tag.Id"
+                                       asp-route-query="@Model.Query">Edit</a>
+                                    <form asp-action="DeleteTag" method="post" class="d-inline" onsubmit="return confirm('Delete this tag?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="tagId" value="@tag.Id" />
+                                        <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0">Create tag</h5></div>
+            <div class="card-body">
+                <form asp-action="CreateTag" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input asp-for="CreateForm.Name" class="form-control" />
+                    </div>
+                    <button class="btn btn-primary" type="submit">Create tag</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Edit tag</h5>
+                @if (Model.EditId.HasValue)
+                {
+                    <a class="btn btn-outline-secondary btn-sm" asp-action="Tags" asp-route-query="@Model.Query">Clear selection</a>
+                }
+            </div>
+            <div class="card-body">
+                @if (!Model.EditId.HasValue || Model.UpdateForm.TagId == Guid.Empty)
+                {
+                    <div class="text-muted">Pick a tag from the list to load it through the `GetTagById` service and edit it here.</div>
+                }
+                else
+                {
+                    <form asp-action="UpdateTag" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Query" value="@Model.Query" />
+                        <input asp-for="UpdateForm.TagId" type="hidden" />
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input asp-for="UpdateForm.Name" class="form-control" />
+                        </div>
+                        <button class="btn btn-primary" type="submit">Save changes</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

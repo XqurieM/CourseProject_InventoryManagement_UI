@@ -1,22 +1,102 @@
-@{ ViewData["Title"] = "Create Inventory Wizard"; }
-<div class="alert alert-info"><i class="fa-solid fa-circle-info me-2"></i>This is a complete static UI prototype. All sample values are written directly in Razor/HTML so services can be attached later.</div>
-<div class="row g-3 mb-3">
-  <div class="col-md-2"><div class="wizard-step"><span class="num">1</span><div><b>General</b><div class="small text-muted">Title, category</div></div></div></div>
-  <div class="col-md-2"><div class="wizard-step"><span class="num">2</span><div><b>Tags</b><div class="small text-muted">Cloud metadata</div></div></div></div>
-  <div class="col-md-2"><div class="wizard-step"><span class="num">3</span><div><b>Custom ID</b><div class="small text-muted">Rules preview</div></div></div></div>
-  <div class="col-md-2"><div class="wizard-step"><span class="num">4</span><div><b>Fields</b><div class="small text-muted">Item template</div></div></div></div>
-  <div class="col-md-2"><div class="wizard-step"><span class="num">5</span><div><b>Access</b><div class="small text-muted">Writers</div></div></div></div>
-  <div class="col-md-2"><div class="wizard-step"><span class="num">6</span><div><b>Review</b><div class="small text-muted">Create</div></div></div></div>
+@model InventoryCreatePageViewModel
+@{
+    ViewData["Title"] = Html.T("title", "Create Inventory");
+}
+<div class="alert alert-info">
+    <i class="fa-solid fa-circle-info me-2"></i>
+    @Html.T("info", "This page creates the base inventory first. After that, fields, custom ID rules and access settings continue in the inventory workspace.")
 </div>
-<form>
-<div class="row g-3">
-  <div class="col-xl-8">
-    <div class="card mb-3"><div class="card-header"><h5 class="mb-0">1. General settings</h5></div><div class="card-body"><div class="row g-3"><div class="col-md-8"><label class="form-label">Inventory title</label><input class="form-control form-control-lg" value="Library Books 2026" /></div><div class="col-md-4"><label class="form-label">Category</label><select class="form-select form-select-lg"><option selected>Book</option><option>Equipment</option><option>Furniture</option><option>Document</option><option>Other</option></select></div><div class="col-12"><label class="form-label">Description with Markdown support</label><textarea class="form-control" rows="5">A shared book inventory for the university library. Supports custom fields, discussion, item likes and public read-only access.</textarea></div><div class="col-md-8"><label class="form-label">Illustration URL / cloud upload result</label><input class="form-control" value="https://cdn.example.com/library-cover.jpg" /></div><div class="col-md-4"><label class="form-label">Visibility</label><select class="form-select"><option>Private inventory</option><option selected>Public write for authenticated users</option></select></div></div></div></div>
-    <div class="card mb-3"><div class="card-header d-flex justify-content-between"><h5 class="mb-0">2. Tags</h5><span class="small text-muted">Autocomplete design placeholder</span></div><div class="card-body"><label class="form-label">Tags</label><div class="form-control d-flex flex-wrap gap-2 py-2"><span class="badge text-bg-primary">books <i class="fa-solid fa-xmark ms-1"></i></span><span class="badge text-bg-primary">library <i class="fa-solid fa-xmark ms-1"></i></span><span class="badge text-bg-primary">education <i class="fa-solid fa-xmark ms-1"></i></span><input class="border-0 flex-grow-1" placeholder="Type tag name..." /></div><div class="mt-2 small text-muted">Suggested: archive, authors, documents, office, public</div></div></div>
-    <div class="card mb-3"><div class="card-header d-flex justify-content-between"><h5 class="mb-0">3. Custom inventory number rules</h5><button type="button" class="btn btn-sm btn-outline-primary">Add rule</button></div><div class="card-body"><div id="ruleList" data-sortable="true" class="d-grid gap-2"><div class="rule-card"><div class="row g-2 align-items-center"><div class="col-auto"><i class="rule-handle fa-solid fa-grip-vertical"></i></div><div class="col-md-3"><select class="form-select"><option selected>Fixed text</option><option>Sequence</option><option>Date/time</option><option>GUID</option><option>6-digit random</option></select></div><div class="col-md-3"><input class="form-control" value="BOOK-" /></div><div class="col-md-3"><input class="form-control" placeholder="Format/help" value="Unicode text" /></div><div class="col text-end"><button type="button" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash"></i></button></div></div></div><div class="rule-card"><div class="row g-2 align-items-center"><div class="col-auto"><i class="rule-handle fa-solid fa-grip-vertical"></i></div><div class="col-md-3"><select class="form-select"><option selected>Sequence</option></select></div><div class="col-md-3"><input class="form-control" value="000001" /></div><div class="col-md-3"><input class="form-control" value="D6 leading zeros" /></div><div class="col text-end"><button type="button" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash"></i></button></div></div></div></div><hr/><div class="preview-id">Preview: BOOK-000184</div></div></div>
-    <div class="card mb-3"><div class="card-header d-flex justify-content-between"><h5 class="mb-0">4. Custom item fields</h5><button type="button" class="btn btn-sm btn-outline-primary">Add field</button></div><div class="card-body"><div class="alert alert-light border">PDF limit design: max 3 single-line text, 3 multi-line text, 3 numeric, 3 document/image link and 3 true/false fields.</div><div id="fieldList" data-sortable="true" class="d-grid gap-2"><div class="field-card"><div class="row g-2 align-items-center"><div class="col-auto"><i class="field-handle fa-solid fa-grip-vertical"></i></div><div class="col-md-3"><input class="form-control" value="Title" /></div><div class="col-md-2"><select class="form-select"><option selected>Single-line text</option><option>Number</option><option>Multiline</option><option>Document link</option><option>Boolean</option></select></div><div class="col-md-3"><input class="form-control" value="Book title displayed in table" /></div><div class="col-md-2"><div class="form-check"><input class="form-check-input" checked type="checkbox" /><label class="form-check-label">Show in table</label></div></div><div class="col text-end"><button class="btn btn-outline-danger btn-sm" type="button"><i class="fa-solid fa-trash"></i></button></div></div></div><div class="field-card"><div class="row g-2 align-items-center"><div class="col-auto"><i class="field-handle fa-solid fa-grip-vertical"></i></div><div class="col-md-3"><input class="form-control" value="Authors" /></div><div class="col-md-2"><select class="form-select"><option selected>Single-line text</option></select></div><div class="col-md-3"><input class="form-control" value="Comma-separated authors" /></div><div class="col-md-2"><div class="form-check"><input class="form-check-input" checked type="checkbox" /><label class="form-check-label">Show in table</label></div></div><div class="col text-end"><button class="btn btn-outline-danger btn-sm" type="button"><i class="fa-solid fa-trash"></i></button></div></div></div><div class="field-card"><div class="row g-2 align-items-center"><div class="col-auto"><i class="field-handle fa-solid fa-grip-vertical"></i></div><div class="col-md-3"><input class="form-control" value="Year" /></div><div class="col-md-2"><select class="form-select"><option selected>Number</option></select></div><div class="col-md-3"><input class="form-control" value="Publication year" /></div><div class="col-md-2"><div class="form-check"><input class="form-check-input" checked type="checkbox" /><label class="form-check-label">Show in table</label></div></div><div class="col text-end"><button class="btn btn-outline-danger btn-sm" type="button"><i class="fa-solid fa-trash"></i></button></div></div></div><div class="field-card"><div class="row g-2 align-items-center"><div class="col-auto"><i class="field-handle fa-solid fa-grip-vertical"></i></div><div class="col-md-3"><input class="form-control" value="Annotation" /></div><div class="col-md-2"><select class="form-select"><option selected>Multiline</option></select></div><div class="col-md-3"><input class="form-control" value="Short Markdown-friendly summary" /></div><div class="col-md-2"><div class="form-check"><input class="form-check-input" type="checkbox" /><label class="form-check-label">Show in table</label></div></div><div class="col text-end"><button class="btn btn-outline-danger btn-sm" type="button"><i class="fa-solid fa-trash"></i></button></div></div></div></div></div></div>
-    <div class="card mb-3"><div class="card-header"><h5 class="mb-0">5. Access settings</h5></div><div class="card-body"><div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" checked /><label class="form-check-label fw-semibold">Allow all authenticated users to add/edit items</label></div><div class="row g-2"><div class="col-md-8"><input class="form-control" placeholder="Add user by username or email..." /></div><div class="col-md-4"><button class="btn btn-outline-primary w-100" type="button">Add selected user</button></div></div><div class="mt-3 d-grid gap-2"><div class="access-user d-flex justify-content-between align-items-center"><div><b>nora.stone</b><div class="small text-muted">nora.stone@example.com</div></div><span class="badge text-bg-success">Owner</span></div><div class="access-user d-flex justify-content-between align-items-center"><div><b>mehmet.kaya</b><div class="small text-muted">mehmet.kaya@example.com</div></div><button type="button" class="btn btn-sm btn-outline-danger">Remove</button></div></div></div></div>
-  </div>
-  <div class="col-xl-4"><div class="card sticky-top" style="top:1rem"><div class="card-header"><h5 class="mb-0">6. Review before create</h5></div><div class="card-body"><dl class="row"><dt class="col-5">Title</dt><dd class="col-7">Library Books 2026</dd><dt class="col-5">Category</dt><dd class="col-7">Book</dd><dt class="col-5">Tags</dt><dd class="col-7">books, library, education</dd><dt class="col-5">Custom ID</dt><dd class="col-7"><code>BOOK-000184</code></dd><dt class="col-5">Fields</dt><dd class="col-7">4 configured</dd><dt class="col-5">Access</dt><dd class="col-7">Public write</dd></dl><a class="btn btn-success w-100" asp-action="Details" asp-route-id="1">Create Inventory Prototype</a><a class="btn btn-outline-secondary w-100 mt-2" asp-action="Index">Cancel</a></div></div></div>
-</div>
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <div class="row g-3">
+        <div class="col-xl-8">
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">@Html.T("general.title", "General settings")</h5></div>
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">@Html.T("form.title", "Inventory title")</label>
+                            <input asp-for="Form.Title" class="form-control form-control-lg" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">@Html.T("form.category", "Category")</label>
+                            <select asp-for="Form.CategoryId" class="form-select form-select-lg">
+                                <option value="">@Html.T("form.category.placeholder", "Select category")</option>
+                                @foreach (var category in Model.Categories)
+                                {
+                                    <option value="@category.Id">@category.Name</option>
+                                }
+                            </select>
+                            @if (!string.IsNullOrWhiteSpace(Model.CategoriesHelpText))
+                            {
+                                <div class="form-text">@Model.CategoriesHelpText</div>
+                            }
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">@Html.T("form.description", "Description")</label>
+                            <textarea asp-for="Form.Description" class="form-control" rows="5"></textarea>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">@Html.T("form.imageUrl", "Illustration URL")</label>
+                            <input asp-for="Form.ImageUrl" class="form-control" id="inventoryImageUrlInput" placeholder="https://..." />
+                            <div class="form-text">If you paste a URL, it will be used directly. If you choose a file, it is uploaded to Google Drive first and the returned public URL is saved.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Upload image</label>
+                            <input asp-for="UploadedImage" type="file" accept="image/*" class="form-control" id="inventoryImageFileInput" />
+                            <div class="form-text">Recommended when you want the system to upload the file for you. File upload takes priority over the URL field.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">@Html.T("form.visibility", "Write access")</label>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <input class="btn-check" type="radio" name="Form.IsPublic" id="createVisibilityRestricted" value="false" checked="@(!Model.Form.IsPublic)" />
+                                    <label class="card h-100 border-2 shadow-sm access-mode-card @(Model.Form.IsPublic ? "" : "border-primary")" for="createVisibilityRestricted">
+                                        <div class="card-body">
+                                            <div class="fw-semibold mb-1">@Html.T("form.visibility.restricted", "Only owner and admins")</div>
+                                            <div class="small text-muted">@Html.T("form.visibility.restrictedHelp", "Inventory settings and item writing stay limited to the main managers.")</div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="col-md-6">
+                                    <input class="btn-check" type="radio" name="Form.IsPublic" id="createVisibilityShared" value="true" checked="@(Model.Form.IsPublic)" />
+                                    <label class="card h-100 border-2 shadow-sm access-mode-card @(Model.Form.IsPublic ? "border-primary" : "")" for="createVisibilityShared">
+                                        <div class="card-body">
+                                            <div class="fw-semibold mb-1">@Html.T("form.visibility.shared", "Allow authenticated item writers")</div>
+                                            <div class="small text-muted">@Html.T("form.visibility.sharedHelp", "Signed-in users can add and update items, while settings stay with owner/admin.")</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card sticky-top" style="top:1rem">
+                <div class="card-header"><h5 class="mb-0">@Html.T("review.title", "Review")</h5></div>
+                <div class="card-body">
+                    <div class="rounded overflow-hidden border mb-3 bg-light d-flex align-items-center justify-content-center" style="aspect-ratio: 16/10;">
+                        <img id="inventoryCreatePreviewImage"
+                             src="@(string.IsNullOrWhiteSpace(Model.Form.ImageUrl) ? "" : Model.Form.ImageUrl)"
+                             alt="Inventory preview"
+                             style="width:100%;height:100%;object-fit:cover;display:@(string.IsNullOrWhiteSpace(Model.Form.ImageUrl) ? "none" : "block")" />
+                        <div id="inventoryCreatePreviewPlaceholder" class="text-center text-muted px-3" style="display:@(string.IsNullOrWhiteSpace(Model.Form.ImageUrl) ? "block" : "none")">
+                            <i class="fa-solid fa-image fa-2x mb-2"></i>
+                            <div>Image preview will appear here.</div>
+                        </div>
+                    </div>
+                    <dl class="row">
+                        <dt class="col-5">@Html.T("review.titleLabel", "Title")</dt><dd class="col-7">@(!string.IsNullOrWhiteSpace(Model.Form.Title) ? Model.Form.Title : "-")</dd>
+                        <dt class="col-5">@Html.T("review.categoryLabel", "Category")</dt><dd class="col-7">@Model.Categories.FirstOrDefault(x => x.Id == Model.Form.CategoryId)?.Name</dd>
+                        <dt class="col-5">@Html.T("review.visibilityLabel", "Write access")</dt><dd class="col-7">@(Model.Form.IsPublic ? Html.T("form.visibility.shared", "Allow authenticated item writers") : Html.T("form.visibility.restricted", "Only owner and admins"))</dd>
+                    </dl>
+                    <button class="btn btn-success w-100" type="submit">@Html.T("actions.create", "Create Inventory")</button>
+                    <a class="btn btn-outline-secondary w-100 mt-2" asp-action="Index">@Html.T("actions.cancel", "Cancel")</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </form>

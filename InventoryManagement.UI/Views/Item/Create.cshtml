@@ -1,3 +1,91 @@
-@{ ViewData["Title"] = "Add Item to Library Books 2026"; }
-<div class="item-context-banner mb-3"><div class="d-flex justify-content-between align-items-center"><div><h4 class="mb-1">Adding item to: Library Books 2026</h4><div>Inventory category: Book · Custom ID format: <code class="text-white">BOOK-000184</code> · Write access: Public authenticated users</div></div><a class="btn btn-light" asp-controller="Inventory" asp-action="Details" asp-route-id="1">Back to inventory</a></div></div>
-<div class="row g-3"><div class="col-lg-8"><div class="card"><div class="card-header"><h5 class="mb-0">Dynamic item form generated from this inventory fields</h5></div><div class="card-body"><div class="row g-3"><div class="col-md-4"><label class="form-label">Custom ID</label><input class="form-control" value="BOOK-000184"/><div class="form-text">Editable, validated against inventory format.</div></div><div class="col-md-8"><label class="form-label">Title</label><input class="form-control" placeholder="Book title"/></div><div class="col-md-8"><label class="form-label">Authors</label><input class="form-control" placeholder="Author names"/></div><div class="col-md-4"><label class="form-label">Year</label><input class="form-control" type="number" placeholder="2026"/></div><div class="col-12"><label class="form-label">Annotation</label><textarea class="form-control" rows="5" placeholder="Markdown annotation..."></textarea></div><div class="col-md-8"><label class="form-label">Cover / document link</label><input class="form-control" placeholder="https://..."/></div><div class="col-md-4"><label class="form-label">Available</label><div class="form-check form-switch mt-2"><input class="form-check-input" checked type="checkbox"/><label class="form-check-label">Currently available</label></div></div></div><hr/><button class="btn btn-success">Create item</button><button class="btn btn-outline-secondary ms-2">Save draft visually</button></div></div></div><div class="col-lg-4"><div class="card"><div class="card-header"><h5 class="mb-0">Preview</h5></div><div class="card-body"><div class="preview-panel p-3"><div class="text-muted small">Custom ID</div><h5><code>BOOK-000184</code></h5><div class="text-muted small">Table columns shown after save</div><table class="table table-sm mt-2"><tr><th>Title</th><td>...</td></tr><tr><th>Authors</th><td>...</td></tr><tr><th>Year</th><td>...</td></tr></table></div></div></div></div></div>
+@model ItemCreatePageViewModel
+@{
+    ViewData["Title"] = $"{Html.T("title", "Add Item to")} {Model.InventoryTitle}";
+}
+<div class="item-context-banner mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-1">@Html.T("banner.title", "Adding item to:") @Model.InventoryTitle</h4>
+            <div>@Html.T("banner.category", "Inventory category:") @Model.CategoryName · @Html.T("banner.access", "Write access:") @(Model.CanWriteItems ? Html.T("banner.allowed", "Allowed") : Html.T("banner.denied", "Not allowed"))</div>
+        </div>
+        <a class="btn btn-light" asp-controller="Inventory" asp-action="Details" asp-route-id="@Model.InventoryId">@Html.T("actions.back", "Back to inventory")</a>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">@Html.T("create.title", "Bulk item create")</h5></div>
+            <div class="card-body">
+                @if (!Model.CanWriteItems)
+                {
+                    <div class="alert alert-warning mb-0">@Html.T("create.denied", "You do not have permission to add items to this inventory.")</div>
+                }
+                else
+                {
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="InventoryId" type="hidden" />
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="mb-1">@Html.T("create.itemsTitle", "Items to create")</h6>
+                                <div class="small text-muted">@Html.T("create.itemsHelp", "Add one or many item names, then continue straight into field value entry.")</div>
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm" type="button" id="addItemRowButton">
+                                <i class="fa-solid fa-plus me-1"></i>@Html.T("create.addRow", "Add row")
+                            </button>
+                        </div>
+                        <div id="bulkItemRows" class="d-grid gap-3">
+                            @for (var i = 0; i < Model.ItemRows.Count; i++)
+                            {
+                                <div class="bulk-item-row">
+                                    <div class="input-group">
+                                        <span class="input-group-text">@Html.T("create.name", "Name")</span>
+                                        <input asp-for="ItemRows[i].ItemName" class="form-control" placeholder="@Html.T("create.namePlaceholder", "Item name")" />
+                                        <button class="btn btn-outline-danger remove-item-row" type="button"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.HelperText))
+                        {
+                            <div class="alert alert-light border mt-3 mb-0">@Model.HelperText</div>
+                        }
+                        <button class="btn btn-success mt-3" type="submit">@Html.T("create.submit", "Create items")</button>
+                    </form>
+                    <template id="bulkItemRowTemplate">
+                        <div class="bulk-item-row">
+                            <div class="input-group">
+                                <span class="input-group-text">@Html.T("create.name", "Name")</span>
+                                <input name="ItemRows[__index__].ItemName" class="form-control" placeholder="@Html.T("create.namePlaceholder", "Item name")" />
+                                <button class="btn btn-outline-danger remove-item-row" type="button"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </template>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">@Html.T("preview.title", "Preview")</h5></div>
+            <div class="card-body">
+                <div class="preview-panel p-3">
+                    <div class="text-muted small">@Html.T("preview.inventory", "Inventory")</div>
+                    <h5>@Model.InventoryTitle</h5>
+                    <div class="text-muted small">@Html.T("preview.fields", "Field setup")</div>
+                    <p class="mb-2">@Model.InventoryFields.Count @Html.T("preview.fieldCount", "field(s) currently defined for this inventory.")</p>
+                    @if (Model.InventoryFields.Count > 0)
+                    {
+                        <ul class="small mb-0 ps-3">
+                        @foreach (var field in Model.InventoryFields.OrderBy(x => x.DisplayOrder).Take(6))
+                        {
+                            <li>@field.Name (@field.FieldType)</li>
+                        }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

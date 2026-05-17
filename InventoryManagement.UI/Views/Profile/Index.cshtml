@@ -1,2 +1,115 @@
-@{ ViewData["Title"] = "My Page"; }
-<div class="row g-3"><div class="col-lg-4"><div class="card"><div class="card-body text-center"><div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:86px;height:86px"><i class="fa-solid fa-user fa-2x"></i></div><h4>Alex Morgan</h4><p class="text-muted">alex@example.com</p><span class="badge text-bg-danger">Admin</span><span class="badge text-bg-success ms-1">Active</span><hr/><div class="row"><div class="col"><b>12</b><div class="small text-muted">Owned</div></div><div class="col"><b>38</b><div class="small text-muted">Writable</div></div></div></div></div><div class="card mt-3"><div class="card-header"><h5 class="mb-0">Preferences</h5></div><div class="card-body"><label class="form-label">Language</label><select class="form-select"><option>English</option><option>Turkish</option></select><label class="form-label mt-3">Theme</label><select class="form-select"><option>Light</option><option>Dark</option></select><button class="btn btn-primary w-100 mt-3">Save preferences</button></div></div></div><div class="col-lg-8"><div class="card mb-3"><div class="card-header d-flex justify-content-between"><h5 class="mb-0">Inventories I own</h5><a class="btn btn-sm btn-primary" asp-controller="Inventory" asp-action="Create">Create new</a></div><div class="card-body table-responsive p-0"><table class="table table-hover mb-0"><thead><tr><th>Inventory</th><th>Category</th><th>Items</th><th>Access</th><th>Updated</th></tr></thead><tbody><tr><td><a asp-controller="Inventory" asp-action="Details" asp-route-id="2">Office Equipment</a></td><td>Equipment</td><td>315</td><td>Private</td><td>Yesterday</td></tr><tr><td><a asp-controller="Inventory" asp-action="Details" asp-route-id="4">Warehouse Tools</a></td><td>Other</td><td>54</td><td>Public</td><td>Apr 25</td></tr></tbody></table></div></div><div class="card"><div class="card-header"><h5 class="mb-0">Inventories I can edit</h5></div><div class="card-body table-responsive p-0"><table class="table table-hover mb-0"><thead><tr><th>Inventory</th><th>Owner</th><th>Category</th><th>Items</th><th>Permission</th></tr></thead><tbody><tr><td><a asp-controller="Inventory" asp-action="Details" asp-route-id="1">Library Books 2026</a></td><td>Nora Stone</td><td>Book</td><td>942</td><td><span class="badge text-bg-success">Public write</span></td></tr><tr><td><a asp-controller="Inventory" asp-action="Details" asp-route-id="3">HR Documents Archive</a></td><td>Mehmet Kaya</td><td>Document</td><td>77</td><td><span class="badge text-bg-primary">Explicit access</span></td></tr></tbody></table></div></div></div></div>
+@model ProfilePageViewModel
+@{
+    ViewData["Title"] = Html.T("title", "My Page");
+}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:86px;height:86px"><i class="fa-solid fa-user fa-2x"></i></div>
+                <h4>@Model.User.UserName</h4>
+                <p class="text-muted">@Model.User.Email</p>
+                <span class="badge @(Model.User.IsAdmin ? "text-bg-danger" : "text-bg-secondary")">@(Model.User.IsAdmin ? Html.T("role.admin", "Admin") : Html.T("role.user", "User"))</span>
+                <span class="badge @(Model.User.IsBlocked ? "text-bg-dark" : "text-bg-success") ms-1">@(Model.User.IsBlocked ? Html.T("status.blocked", "Blocked") : Html.T("status.active", "Active"))</span>
+                <hr />
+                <div class="row">
+                    <div class="col"><b>@Model.OwnedInventories.Count</b><div class="small text-muted">@Html.T("stats.owned", "Owned")</div></div>
+                    <div class="col"><b>@Model.WritableInventories.Count</b><div class="small text-muted">@Html.T("stats.writable", "Writable")</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header"><h5 class="mb-0">@Html.T("preferences.title", "Preferences")</h5></div>
+            <div class="card-body">
+                <form asp-action="SavePreferences" method="post">
+                    @Html.AntiForgeryToken()
+                    <label class="form-label">@Html.T("preferences.language", "Language")</label>
+                    <select asp-for="PreferredLanguage" class="form-select" asp-items="Html.GetEnumSelectList<LanguageType>()"></select>
+                    <label class="form-label mt-3">@Html.T("preferences.theme", "Theme")</label>
+                    <select asp-for="PreferredTheme" class="form-select" asp-items="Html.GetEnumSelectList<ThemeType>()"></select>
+                    <button class="btn btn-primary w-100 mt-3">@Html.T("preferences.save", "Save preferences")</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        @if (!string.IsNullOrWhiteSpace(Model.InventoryNote))
+        {
+            <div class="alert alert-light border">@Model.InventoryNote</div>
+        }
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <h5 class="mb-0">@Html.T("owned.title", "Inventories I own")</h5>
+                <a class="btn btn-sm btn-primary" asp-controller="Inventory" asp-action="Create">@Html.T("owned.create", "Create new")</a>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>@Html.T("table.inventory", "Inventory")</th><th>@Html.T("table.category", "Category")</th><th>@Html.T("table.items", "Items")</th><th>@Html.T("table.access", "Access")</th></tr></thead>
+                    <tbody>
+                    @foreach (var inventory in Model.OwnedInventories)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-start gap-3 py-1">
+                                    @if (!string.IsNullOrWhiteSpace(inventory.ImageUrl))
+                                    {
+                                        <img src="@inventory.ImageUrl" alt="@inventory.Title" class="inventory-thumb inventory-thumb-sm rounded border flex-shrink-0" />
+                                    }
+                                    else
+                                    {
+                                        <div class="inventory-thumb inventory-thumb-sm rounded border bg-light text-muted d-flex align-items-center justify-content-center flex-shrink-0">
+                                            <i class="fa-solid fa-image"></i>
+                                        </div>
+                                    }
+                                    <div class="inventory-media-body">
+                                        <a asp-controller="Inventory" asp-action="Details" asp-route-id="@inventory.Id" class="inventory-title">@inventory.Title</a>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@inventory.CategoryName</td>
+                            <td>@inventory.ItemCount</td>
+                            <td>@(inventory.IsPublic ? Html.T("access.public", "Public") : Html.T("access.private", "Private"))</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">@Html.T("writable.title", "Writable inventories")</h5></div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>@Html.T("table.inventory", "Inventory")</th><th>@Html.T("table.owner", "Owner")</th><th>@Html.T("table.category", "Category")</th><th>@Html.T("table.items", "Items")</th><th>@Html.T("table.updated", "Updated")</th></tr></thead>
+                    <tbody>
+                    @foreach (var inventory in Model.WritableInventories)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-start gap-3 py-1">
+                                    @if (!string.IsNullOrWhiteSpace(inventory.ImageUrl))
+                                    {
+                                        <img src="@inventory.ImageUrl" alt="@inventory.Title" class="inventory-thumb inventory-thumb-sm rounded border flex-shrink-0" />
+                                    }
+                                    else
+                                    {
+                                        <div class="inventory-thumb inventory-thumb-sm rounded border bg-light text-muted d-flex align-items-center justify-content-center flex-shrink-0">
+                                            <i class="fa-solid fa-image"></i>
+                                        </div>
+                                    }
+                                    <div class="inventory-media-body">
+                                        <a asp-controller="Inventory" asp-action="Details" asp-route-id="@inventory.Id" class="inventory-title">@inventory.Title</a>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@inventory.UserName</td>
+                            <td>@inventory.CategoryName</td>
+                            <td>@inventory.ItemCount</td>
+                            <td>@inventory.UpdateDate.ToLocalTime().ToString("g")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

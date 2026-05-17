@@ -5,4 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>InventoryManagement.UI</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CourseProject_InventoryManagement\CourseProject_InventoryManagement.Application\CourseProject_InventoryManagement.Application.csproj" />
+  </ItemGroup>
 </Project>

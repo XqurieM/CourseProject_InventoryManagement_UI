@@ -1,2 +1,96 @@
-@{ ViewData["Title"] = "Edit Item"; }
-@await Html.PartialAsync("~/Views/Item/Create.cshtml")
+@model ItemEditPageViewModel
+@{
+    ViewData["Title"] = Html.T("title", "Edit Item Values");
+}
+<div class="item-context-banner mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-1">@Model.Item.ItemName</h4>
+            <div><code>@Model.Item.CustomId</code> · @Model.InventoryTitle</div>
+        </div>
+        <a class="btn btn-light" asp-action="Details" asp-route-id="@Model.Item.Id" asp-route-inventoryId="@Model.InventoryId">@Html.T("actions.back", "Back to detail")</a>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">@Html.T("fields.title", "Field values")</h5></div>
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                @if (!string.IsNullOrWhiteSpace(Model.HelperText))
+                {
+                    <div class="alert alert-light border">@Model.HelperText</div>
+                }
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input asp-for="InventoryId" type="hidden" />
+                    <input asp-for="InventoryTitle" type="hidden" />
+                    <input asp-for="CanWriteItems" type="hidden" />
+                    <input asp-for="Item.Id" type="hidden" />
+                    <input asp-for="Item.InventoryId" type="hidden" />
+                    <input asp-for="RowVersion" type="hidden" />
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">Item name</label>
+                            <input asp-for="ItemName" class="form-control form-control-lg" />
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Custom ID</label>
+                            <input asp-for="CustomId" class="form-control form-control-lg" />
+                        </div>
+                    </div>
+                    <div class="d-grid gap-3">
+                    @for (var i = 0; i < Model.Fields.Count; i++)
+                    {
+                        <input asp-for="Fields[i].InventoryFieldId" type="hidden" />
+                        <input asp-for="Fields[i].Label" type="hidden" />
+                        <input asp-for="Fields[i].Description" type="hidden" />
+                        <input asp-for="Fields[i].FieldType" type="hidden" />
+                        <input asp-for="Fields[i].DisplayOrder" type="hidden" />
+                        <input asp-for="Fields[i].IsRequired" type="hidden" />
+                        <input asp-for="Fields[i].ShowInTable" type="hidden" />
+                        <div class="field-card">
+                            <label class="form-label fw-semibold">@Model.Fields[i].Label</label>
+                            @if (!string.IsNullOrWhiteSpace(Model.Fields[i].Description))
+                            {
+                                <div class="small text-muted mb-2">@Model.Fields[i].Description</div>
+                            }
+                            @switch (Model.Fields[i].FieldType)
+                            {
+                                case InventoryFieldType.Number:
+                                    <input asp-for="Fields[i].NumberValue" class="form-control" />
+                                    break;
+                                case InventoryFieldType.Boolean:
+                                    <div class="form-check form-switch">
+                                        <input asp-for="Fields[i].BooleanValue" class="form-check-input" />
+                                        <label asp-for="Fields[i].BooleanValue" class="form-check-label">@Html.T("fields.boolean", "True / False")</label>
+                                    </div>
+                                    break;
+                                default:
+                                    <input asp-for="Fields[i].StringValue" class="form-control" />
+                                    break;
+                            }
+                        </div>
+                    }
+                    </div>
+                    <button class="btn btn-success mt-3" type="submit">Save item</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">@Html.T("summary.title", "Item summary")</h5></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">@Html.T("summary.name", "Name")</dt>
+                    <dd class="col-sm-7">@Model.Item.ItemName</dd>
+                    <dt class="col-sm-5">@Html.T("summary.customId", "Custom ID")</dt>
+                    <dd class="col-sm-7"><code>@Model.Item.CustomId</code></dd>
+                    <dt class="col-sm-5">@Html.T("summary.fieldCount", "Field count")</dt>
+                    <dd class="col-sm-7">@Model.Fields.Count</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

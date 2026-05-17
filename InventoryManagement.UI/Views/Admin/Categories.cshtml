@@ -1,0 +1,111 @@
+@model AdminCategoriesPageViewModel
+@{
+    ViewData["Title"] = "Categories";
+}
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Category list</h5>
+                <span class="badge text-bg-primary">@Model.Categories.Count</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var category in Model.Categories)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@category.Name</td>
+                                <td class="text-muted">@(string.IsNullOrWhiteSpace(category.Description) ? "-" : category.Description)</td>
+                                <td>
+                                    <span class="badge @(category.IsActive ? "text-bg-success" : "text-bg-secondary")">
+                                        @(category.IsActive ? "Active" : "Passive")
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm" asp-action="Categories" asp-route-editId="@category.Id">Edit</a>
+                                    <form asp-action="DeleteCategory" method="post" class="d-inline" onsubmit="return confirm('Delete this category?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="categoryId" value="@category.Id" />
+                                        <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0">Create category</h5></div>
+            <div class="card-body">
+                <form asp-action="CreateCategory" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input asp-for="CreateForm.Name" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea asp-for="CreateForm.Description" class="form-control" rows="4"></textarea>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CreateForm.IsActive" class="form-check-input" />
+                        <label asp-for="CreateForm.IsActive" class="form-check-label">Active</label>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Create category</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Edit category</h5>
+                @if (Model.EditId.HasValue)
+                {
+                    <a class="btn btn-outline-secondary btn-sm" asp-action="Categories">Clear selection</a>
+                }
+            </div>
+            <div class="card-body">
+                @if (!Model.EditId.HasValue || Model.UpdateForm.CategoryId == Guid.Empty)
+                {
+                    <div class="text-muted">Pick a category from the list to load it through the `GetCategoryById` service and edit it here.</div>
+                }
+                else
+                {
+                    <form asp-action="UpdateCategory" method="post">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="UpdateForm.CategoryId" type="hidden" />
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input asp-for="UpdateForm.Name" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea asp-for="UpdateForm.Description" class="form-control" rows="4"></textarea>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="UpdateForm.IsActive" class="form-check-input" />
+                            <label asp-for="UpdateForm.IsActive" class="form-check-label">Active</label>
+                        </div>
+                        <button class="btn btn-primary" type="submit">Save changes</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

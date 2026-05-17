@@ -1,11 +1,829 @@
-@{ ViewData["Title"] = "Inventory Workspace"; }
-<div class="row g-3 mb-3"><div class="col-lg-8"><div class="card"><div class="card-body"><div class="d-flex align-items-start gap-3"><div class="rounded bg-primary text-white d-flex align-items-center justify-content-center" style="width:72px;height:72px"><i class="fa-solid fa-book fa-2x"></i></div><div class="flex-grow-1"><h3 class="mb-1">Library Books 2026</h3><p class="text-muted mb-2">Shared book inventory with custom number rules, configurable fields, discussion, likes and item statistics.</p><span class="badge text-bg-primary">Book</span> <span class="badge badge-soft">books</span> <span class="badge badge-soft">library</span> <span class="badge text-bg-success">Public write</span></div><div class="text-end"><a class="btn btn-primary" asp-controller="Item" asp-action="Create" asp-route-inventoryId="1"><i class="fa-solid fa-plus me-1"></i>Add item to this inventory</a><div class="small text-muted mt-2">Owner: Nora Stone</div></div></div></div></div></div><div class="col-lg-4"><div class="card"><div class="card-body"><div class="row text-center"><div class="col"><div class="fs-3 fw-bold">942</div><div class="small text-muted">Items</div></div><div class="col"><div class="fs-3 fw-bold">4</div><div class="small text-muted">Fields</div></div><div class="col"><div class="fs-3 fw-bold">128</div><div class="small text-muted">Likes</div></div></div></div></div></div></div>
-<div class="card"><div class="card-header p-0"><ul class="nav nav-tabs card-header-tabs px-3 pt-3" role="tablist"><li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#items">Items</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#discussion">Discussion</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#settings">General settings</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#customid">Custom ID</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#access">Access</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#fields">Fields</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#stats">Stats</button></li></ul></div><div class="card-body tab-content">
-<div class="tab-pane fade show active" id="items"><div class="d-flex justify-content-between mb-3"><div class="input-group w-50"><input class="form-control" placeholder="Filter items in this inventory..."/><button class="btn btn-outline-secondary">Filter</button></div><a class="btn btn-primary" asp-controller="Item" asp-action="Create" asp-route-inventoryId="1">Add item</a></div><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Custom ID</th><th>Title</th><th>Authors</th><th>Year</th><th>Created by</th><th>Likes</th><th>Updated</th></tr></thead><tbody><tr><td><a asp-controller="Item" asp-action="Details" asp-route-id="1"><code>BOOK-000184</code></a></td><td>Clean Code</td><td>Robert C. Martin</td><td>2008</td><td>Nora Stone</td><td><i class="fa-solid fa-heart text-danger"></i> 24</td><td>Today</td></tr><tr><td><a asp-controller="Item" asp-action="Details" asp-route-id="2"><code>BOOK-000185</code></a></td><td>Domain-Driven Design</td><td>Eric Evans</td><td>2003</td><td>Alex Morgan</td><td><i class="fa-regular fa-heart"></i> 16</td><td>Yesterday</td></tr><tr><td><a asp-controller="Item" asp-action="Details" asp-route-id="3"><code>BOOK-000186</code></a></td><td>Refactoring</td><td>Martin Fowler</td><td>2018</td><td>Mehmet Kaya</td><td><i class="fa-regular fa-heart"></i> 31</td><td>Apr 29</td></tr></tbody></table></div><div class="small text-muted">Table rows link to item detail/edit pages. No row action buttons, matching the PDF guideline.</div></div>
-<div class="tab-pane fade" id="discussion"><div class="alert alert-light border"><i class="fa-solid fa-bolt me-1"></i>Near-real-time discussion placeholder. Later this area can be backed by SignalR polling or hub updates.</div><div class="discussion-post"><div class="d-flex justify-content-between"><b><a asp-controller="Profile" asp-action="Index">Nora Stone</a></b><span class="text-muted small">Today 10:24</span></div><p class="mb-0">Please keep the <b>Year</b> field numeric and use the document link field only for official preview links.</p></div><div class="discussion-post"><div class="d-flex justify-content-between"><b>Alex Morgan</b><span class="text-muted small">Today 10:31</span></div><p class="mb-0">Added three architecture books. Custom IDs were generated correctly.</p></div><textarea class="form-control" rows="4" placeholder="Write Markdown comment..."></textarea><button class="btn btn-primary mt-2">Post comment</button></div>
-<div class="tab-pane fade" id="settings"><div class="row g-3"><div class="col-md-8"><label class="form-label">Title</label><input class="form-control" value="Library Books 2026"/><label class="form-label mt-3">Description</label><textarea class="form-control" rows="6">Shared book inventory with Markdown description.</textarea></div><div class="col-md-4"><label class="form-label">Category</label><select class="form-select"><option selected>Book</option><option>Equipment</option></select><label class="form-label mt-3">Image URL</label><input class="form-control" value="https://cdn.example.com/library-cover.jpg"/><div class="form-check form-switch mt-3"><input class="form-check-input" checked type="checkbox"/><label class="form-check-label">Public write access</label></div><button class="btn btn-success mt-3 w-100">Auto-save now</button><div class="small text-muted mt-2">Auto-save design: save every 7-10 seconds with optimistic lock version.</div></div></div></div>
-<div class="tab-pane fade" id="customid"><div class="row g-3"><div class="col-lg-8"><div data-sortable="true" class="d-grid gap-2"><div class="rule-card"><i class="rule-handle fa-solid fa-grip-vertical me-2"></i><b>Fixed text</b> <code>BOOK-</code></div><div class="rule-card"><i class="rule-handle fa-solid fa-grip-vertical me-2"></i><b>Sequence</b> <code>D6</code></div><div class="rule-card"><i class="rule-handle fa-solid fa-grip-vertical me-2"></i><b>Date/time</b> <code>yyyy</code></div></div></div><div class="col-lg-4"><div class="preview-id">BOOK-000184-2026</div><button class="btn btn-outline-primary mt-3 w-100">Add ID element</button></div></div></div>
-<div class="tab-pane fade" id="access"><div class="row g-3"><div class="col-md-7"><input class="form-control mb-2" placeholder="Autocomplete by name or email..."/><div class="access-user d-flex justify-content-between mb-2"><div><b>Nora Stone</b><div class="small text-muted">nora.stone@example.com</div></div><span class="badge text-bg-success">Owner</span></div><div class="access-user d-flex justify-content-between"><div><b>Mehmet Kaya</b><div class="small text-muted">mehmet.kaya@example.com</div></div><button class="btn btn-sm btn-outline-danger">Remove</button></div></div><div class="col-md-5"><div class="form-check form-switch"><input class="form-check-input" checked type="checkbox"/><label class="form-check-label">All authenticated users can write</label></div><select class="form-select mt-3"><option>Sort users by name</option><option>Sort users by email</option></select></div></div></div>
-<div class="tab-pane fade" id="fields"><div class="d-grid gap-2" data-sortable="true"><div class="field-card"><i class="field-handle fa-solid fa-grip-vertical me-2"></i><b>Title</b> - Single-line text - shown in table</div><div class="field-card"><i class="field-handle fa-solid fa-grip-vertical me-2"></i><b>Authors</b> - Single-line text - shown in table</div><div class="field-card"><i class="field-handle fa-solid fa-grip-vertical me-2"></i><b>Year</b> - Numeric - shown in table</div><div class="field-card"><i class="field-handle fa-solid fa-grip-vertical me-2"></i><b>Annotation</b> - Multiline - detail only</div><div class="field-card"><i class="field-handle fa-solid fa-grip-vertical me-2"></i><b>Cover / Document link</b> - Link - detail only</div></div><button class="btn btn-outline-primary mt-3">Add custom field</button></div>
-<div class="tab-pane fade" id="stats"><div class="row g-3"><div class="col-md-4"><div class="card border"><div class="card-body"><h6>Item count</h6><div class="display-6">942</div></div></div></div><div class="col-md-4"><div class="card border"><div class="card-body"><h6>Year average</h6><div class="display-6">2012</div><div class="small text-muted">Range: 1954 - 2026</div></div></div></div><div class="col-md-4"><div class="card border"><div class="card-body"><h6>Most used author</h6><div class="display-6">Martin</div><div class="small text-muted">42 occurrences</div></div></div></div></div></div>
-</div></div>
+@model InventoryDetailsPageViewModel
+@inject Microsoft.Extensions.Options.IOptions<InventoryManagement.UI.Options.BackendApiOptions> BackendApiOptions
+@{
+    ViewData["Title"] = "Inventory Workspace";
+    var commentHubUrl = $"{BackendApiOptions.Value.BaseUrl.TrimEnd('/')}/commentHub";
+}
+<div class="row g-3 mb-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start gap-3">
+                    @if (!string.IsNullOrWhiteSpace(Model.Inventory.ImageUrl))
+                    {
+                        <img src="@Model.Inventory.ImageUrl"
+                             alt="@Model.Inventory.Title"
+                             class="rounded border"
+                             style="width:96px;height:96px;object-fit:cover;" />
+                    }
+                    else
+                    {
+                        <div class="rounded bg-primary text-white d-flex align-items-center justify-content-center" style="width:96px;height:96px">
+                            <i class="fa-solid fa-boxes-stacked fa-2x"></i>
+                        </div>
+                    }
+                    <div class="flex-grow-1">
+                        <h3 class="mb-1">@Model.Inventory.Title</h3>
+                        <p class="text-muted mb-2">@Model.Inventory.Description</p>
+                        <span class="badge text-bg-primary">@Model.Inventory.CategoryName</span>
+                        <span class="badge @(Model.Inventory.IsPublic ? "text-bg-success" : "text-bg-secondary")">@(Model.Inventory.IsPublic ? "Shared item writing" : "Restricted writing")</span>
+                    </div>
+                    <div class="text-end">
+                        @if (Model.Inventory.CanWriteItems)
+                        {
+                            <a class="btn btn-primary" asp-controller="Item" asp-action="Create" asp-route-inventoryId="@Model.Inventory.Id">
+                                <i class="fa-solid fa-plus me-1"></i>Add item
+                            </a>
+                        }
+                        <div class="small text-muted mt-2">Created @Model.Inventory.CreatedAtUtc.ToLocalTime().ToString("g")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col"><div class="fs-6 fw-bold">Manage</div><div class="small text-muted">@(Model.Inventory.CanManageInventory ? "Yes" : "No")</div></div>
+                    <div class="col"><div class="fs-6 fw-bold">Write items</div><div class="small text-muted">@(Model.Inventory.CanWriteItems ? "Yes" : "No")</div></div>
+                    <div class="col"><div class="fs-6 fw-bold">Write access</div><div class="small text-muted">@(Model.Inventory.IsPublic ? "Shared" : "Restricted")</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<div class="card">
+    <div class="card-header p-0">
+        <ul class="nav nav-tabs card-header-tabs px-3 pt-3" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#summary">Summary</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#settings">Settings</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#fields">Fields</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#customid">Custom ID</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#access">Access</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#discussion">Discussion</button></li>
+        </ul>
+    </div>
+    <div class="card-body tab-content">
+        <div class="tab-pane fade show active" id="summary">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Title</dt><dd class="col-sm-9">@Model.Inventory.Title</dd>
+                <dt class="col-sm-3">Category</dt><dd class="col-sm-9">@Model.Inventory.CategoryName</dd>
+                <dt class="col-sm-3">Description</dt><dd class="col-sm-9">@Model.Inventory.Description</dd>
+                <dt class="col-sm-3">Image</dt>
+                <dd class="col-sm-9">
+                    @if (!string.IsNullOrWhiteSpace(Model.Inventory.ImageUrl))
+                    {
+                        <a href="@Model.Inventory.ImageUrl" target="_blank" rel="noopener noreferrer">@Model.Inventory.ImageUrl</a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">No image</span>
+                    }
+                </dd>
+            </dl>
+            <hr />
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Items in this inventory</h6>
+                <span class="small text-muted">@Model.ItemRows.Count item(s)</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.FieldValuesHelperText))
+            {
+                <div class="alert alert-light border py-2">@Model.FieldValuesHelperText</div>
+            }
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Custom ID</th><th>Name</th><th>Field values</th><th>Likes</th><th>Created</th><th>Updated</th></tr></thead>
+                    <tbody>
+                    @foreach (var row in Model.ItemRows)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="Item" asp-action="Details" asp-route-id="@row.Item.Id" asp-route-inventoryId="@Model.Inventory.Id" class="text-decoration-none">
+                                    <code>@row.Item.CustomId</code>
+                                </a>
+                            </td>
+                            <td>
+                                <a asp-controller="Item" asp-action="Details" asp-route-id="@row.Item.Id" asp-route-inventoryId="@Model.Inventory.Id" class="fw-semibold text-decoration-none">
+                                    @row.Item.ItemName
+                                </a>
+                            </td>
+                            <td>
+                                @if (row.FieldValues.Count == 0)
+                                {
+                                    <span class="text-muted">No values</span>
+                                }
+                                else
+                                {
+                                    <div class="d-grid gap-1">
+                                    @foreach (var field in row.FieldValues)
+                                    {
+                                        <div class="small">
+                                            <span class="fw-semibold">@field.Label:</span>
+                                            <span>@field.DisplayValue</span>
+                                        </div>
+                                    }
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge @(row.Item.IsLikedByCurrentUser ? "text-bg-danger" : "text-bg-light")">
+                                    <i class="fa-solid fa-heart me-1"></i>@row.Item.LikeCount
+                                </span>
+                            </td>
+                            <td>@row.Item.CreateAtUtc.ToLocalTime().ToString("g")</td>
+                            <td>@row.Item.UpdatedAtUtc.ToLocalTime().ToString("g")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <div class="small text-muted mt-3">
+                Open an item by selecting its custom ID or name. Item actions are handled on the detail page instead of inside table rows.
+            </div>
+        </div>
+        <div class="tab-pane fade" id="settings">
+            @if (!Model.Inventory.CanManageInventory)
+            {
+                <div class="alert alert-warning mb-0">Only the owner or an admin can update or delete this inventory.</div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <form asp-action="Update" asp-route-id="@Model.Inventory.Id" method="post" enctype="multipart/form-data">
+                            @Html.AntiForgeryToken()
+                            <input asp-for="UpdateForm.Id" type="hidden" />
+                            <input asp-for="UpdateForm.RowVersion" type="hidden" />
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Title</label>
+                                    <input asp-for="UpdateForm.Title" class="form-control form-control-lg" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Category</label>
+                                    <select asp-for="UpdateForm.CategoryId" class="form-select form-select-lg">
+                                        <option value="">Keep current</option>
+                                        @foreach (var category in Model.Categories)
+                                        {
+                                            <option value="@category.Id">@category.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Description</label>
+                                    <textarea asp-for="UpdateForm.Description" class="form-control" rows="5"></textarea>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Image URL</label>
+                                    <input asp-for="UpdateForm.ImageUrl" class="form-control" id="inventoryImageUrlInput" placeholder="https://..." />
+                                    <div class="form-text">Paste a direct URL, or choose an image file below. If a file is selected, it is uploaded to Google Drive and that URL wins.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Upload image</label>
+                                    <input asp-for="UploadedImage" type="file" accept="image/*" class="form-control" id="inventoryImageFileInput" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Write access</label>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <input class="btn-check" type="radio" name="UpdateForm.IsPublic" id="updateVisibilityRestricted" value="false" checked="@(!Model.UpdateForm.IsPublic.GetValueOrDefault())" />
+                                            <label class="card h-100 border-2 shadow-sm access-mode-card @(!Model.UpdateForm.IsPublic.GetValueOrDefault() ? "border-primary" : "")" for="updateVisibilityRestricted">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold mb-1">Only owner and admins</div>
+                                                    <div class="small text-muted">Only managers can add or update items in this inventory.</div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input class="btn-check" type="radio" name="UpdateForm.IsPublic" id="updateVisibilityShared" value="true" checked="@(Model.UpdateForm.IsPublic.GetValueOrDefault())" />
+                                            <label class="card h-100 border-2 shadow-sm access-mode-card @(Model.UpdateForm.IsPublic.GetValueOrDefault() ? "border-primary" : "")" for="updateVisibilityShared">
+                                                <div class="card-body">
+                                                    <div class="fw-semibold mb-1">Allow authenticated item writers</div>
+                                                    <div class="small text-muted">Signed-in users can work on items without changing inventory settings.</div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 d-flex gap-2">
+                                <button class="btn btn-primary" type="submit">Save settings</button>
+                                <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.Inventory.Id">Reset view</a>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card border-0 bg-body-tertiary">
+                            <div class="card-body">
+                                <div class="rounded overflow-hidden border mb-3 bg-light d-flex align-items-center justify-content-center" style="aspect-ratio: 16/10;">
+                                    <img id="inventoryCreatePreviewImage"
+                                         src="@(string.IsNullOrWhiteSpace(Model.UpdateForm.ImageUrl) ? "" : Model.UpdateForm.ImageUrl)"
+                                         alt="Inventory preview"
+                                         style="width:100%;height:100%;object-fit:cover;display:@(string.IsNullOrWhiteSpace(Model.UpdateForm.ImageUrl) ? "none" : "block")" />
+                                    <div id="inventoryCreatePreviewPlaceholder" class="text-center text-muted px-3" style="display:@(string.IsNullOrWhiteSpace(Model.UpdateForm.ImageUrl) ? "block" : "none")">
+                                        <i class="fa-solid fa-image fa-2x mb-2"></i>
+                                        <div>Image preview will appear here.</div>
+                                    </div>
+                                </div>
+                                <div class="small text-muted">
+                                    Changes are saved through the backend update service with row version control, so stale edits will be rejected instead of overwriting newer data.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card border-danger mt-3">
+                            <div class="card-header bg-danger-subtle"><h6 class="mb-0 text-danger">Danger zone</h6></div>
+                            <div class="card-body">
+                                <div class="small text-muted mb-3">Deleting an inventory also marks its items as deleted. This action hides the inventory from normal lists.</div>
+                                <form asp-action="Delete" asp-route-id="@Model.Inventory.Id" method="post" onsubmit="return confirm('Delete this inventory and its items?');">
+                                    @Html.AntiForgeryToken()
+                                    <button class="btn btn-outline-danger w-100" type="submit">Delete inventory</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="tab-pane fade" id="fields">
+            @if (!Model.Inventory.CanManageInventory)
+            {
+                <div class="alert alert-warning mb-0">Only the owner or an admin can add field definitions.</div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    <div class="col-xl-7">
+                        <div class="field-section-panel h-100">
+                            <div class="field-section-header">
+                                <div>
+                                    <div class="field-section-eyebrow">Current setup</div>
+                                    <h6 class="mb-1">Existing field definitions</h6>
+                                    <div class="small text-muted">Edit the fields that already belong to this inventory. Saving here only updates current definitions.</div>
+                                </div>
+                                <span class="badge text-bg-primary field-count-badge">@Model.ExistingFieldForms.Count field(s)</span>
+                            </div>
+
+                            @if (Model.ExistingFieldForms.Count == 0)
+                            {
+                                <div class="alert alert-light border mb-0">No field definitions are registered for this inventory yet.</div>
+                            }
+                            else
+                            {
+                                <form asp-action="UpdateFields" asp-route-id="@Model.Inventory.Id" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <div class="d-grid gap-3">
+                                        @for (var i = 0; i < Model.ExistingFieldForms.Count; i++)
+                                        {
+                                            <div class="field-card field-editor-card">
+                                                <input asp-for="ExistingFieldForms[i].Id" type="hidden" />
+                                                <div class="field-editor-card-top">
+                                                    <div class="field-editor-index">#@Model.ExistingFieldForms[i].DisplayOrder</div>
+                                                    <div class="small text-muted">Existing field</div>
+                                                </div>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Field name</label>
+                                                        <input asp-for="ExistingFieldForms[i].Name" class="form-control" />
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Field type</label>
+                                                        <select asp-for="ExistingFieldForms[i].FieldType" class="form-select" asp-items="Html.GetEnumSelectList<InventoryFieldType>()"></select>
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <label class="form-label">Order</label>
+                                                        <input asp-for="ExistingFieldForms[i].DisplayOrder" class="form-control" />
+                                                    </div>
+                                                    <div class="col-md-3 d-flex align-items-end">
+                                                        <div class="form-check form-switch">
+                                                            <input asp-for="ExistingFieldForms[i].IsRequired" class="form-check-input" />
+                                                            <label asp-for="ExistingFieldForms[i].IsRequired" class="form-check-label">Required</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-9">
+                                                        <label class="form-label">Description</label>
+                                                        <input asp-for="ExistingFieldForms[i].Description" class="form-control" />
+                                                    </div>
+                                                    <div class="col-md-3 d-flex align-items-end">
+                                                        <div class="form-check">
+                                                            <input asp-for="ExistingFieldForms[i].ShowInTable" class="form-check-input" />
+                                                            <label asp-for="ExistingFieldForms[i].ShowInTable" class="form-check-label">Show in table</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="mt-3 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                                        <div class="small text-muted">Use this section when you want to revise current field definitions without creating new ones.</div>
+                                        <button class="btn btn-primary" type="submit">Update existing fields</button>
+                                    </div>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-xl-5">
+                        <div class="field-section-panel h-100">
+                            <div class="field-section-header">
+                                <div>
+                                    <div class="field-section-eyebrow">Append only</div>
+                                    <h6 class="mb-1">Add new fields</h6>
+                                    <div class="small text-muted">Everything here is treated as new. Existing fields above stay exactly as they are.</div>
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm" type="button" id="addFieldRowButton">
+                                    <i class="fa-solid fa-plus me-1"></i>Add row
+                                </button>
+                            </div>
+
+                            <form asp-action="AddField" asp-route-id="@Model.Inventory.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <div id="bulkFieldRows" class="d-grid gap-3" data-next-order-start="@Model.NextFieldDisplayOrderStart">
+                                    @for (var i = 0; i < Model.FieldForms.Count; i++)
+                                    {
+                                        <div class="field-card bulk-field-row field-editor-card">
+                                            <div class="field-editor-card-top">
+                                                <div class="field-editor-index">New</div>
+                                                <div class="small text-muted">Appends to the current inventory</div>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Field name</label>
+                                                    <input asp-for="FieldForms[i].Name" class="form-control" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Field type</label>
+                                                    <select asp-for="FieldForms[i].FieldType" class="form-select" asp-items="Html.GetEnumSelectList<InventoryFieldType>()"></select>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Order</label>
+                                                    <input asp-for="FieldForms[i].DisplayOrder" class="form-control field-order-input" />
+                                                </div>
+                                                <div class="col-md-3 d-flex align-items-end">
+                                                    <div class="form-check form-switch">
+                                                        <input asp-for="FieldForms[i].IsRequired" class="form-check-input" />
+                                                        <label asp-for="FieldForms[i].IsRequired" class="form-check-label">Required</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-9">
+                                                    <label class="form-label">Description</label>
+                                                    <input asp-for="FieldForms[i].Description" class="form-control" />
+                                                </div>
+                                                <div class="col-md-3 d-flex align-items-end justify-content-between">
+                                                    <div class="form-check">
+                                                        <input asp-for="FieldForms[i].ShowInTable" class="form-check-input" />
+                                                        <label asp-for="FieldForms[i].ShowInTable" class="form-check-label">Show in table</label>
+                                                    </div>
+                                                    <button class="btn btn-outline-danger btn-sm remove-field-row" type="button">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="mt-3 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                                    <div class="small text-muted">Use this side when you want to grow the schema with additional fields.</div>
+                                    <button class="btn btn-outline-primary" type="submit">Add new fields</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <template id="bulkFieldRowTemplate">
+                    <div class="field-card bulk-field-row">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Field name</label>
+                                <input name="FieldForms[__index__].Name" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Field type</label>
+                                <select name="FieldForms[__index__].FieldType" class="form-select">
+                                    @foreach (var option in Html.GetEnumSelectList<InventoryFieldType>())
+                                    {
+                                        <option value="@option.Value">@option.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Order</label>
+                                <input name="FieldForms[__index__].DisplayOrder" class="form-control field-order-input" value="__order__" />
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <div class="form-check form-switch">
+                                    <input name="FieldForms[__index__].IsRequired" value="true" class="form-check-input" type="checkbox" />
+                                    <input name="FieldForms[__index__].IsRequired" value="false" type="hidden" />
+                                    <label class="form-check-label">Required</label>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <label class="form-label">Description</label>
+                                <input name="FieldForms[__index__].Description" class="form-control" />
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end justify-content-between">
+                                <div class="form-check">
+                                    <input name="FieldForms[__index__].ShowInTable" value="true" class="form-check-input" type="checkbox" checked />
+                                    <input name="FieldForms[__index__].ShowInTable" value="false" type="hidden" />
+                                    <label class="form-check-label">Show in table</label>
+                                </div>
+                                <button class="btn btn-outline-danger btn-sm remove-field-row" type="button">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            }
+        </div>
+        <div class="tab-pane fade" id="customid">
+            @if (!Model.Inventory.CanManageInventory)
+            {
+                <div class="alert alert-warning mb-0">Only the owner or an admin can manage custom ID rules.</div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <div class="d-grid gap-4">
+                            <div class="field-section-panel">
+                                <div class="field-section-header">
+                                    <div>
+                                        <div class="field-section-eyebrow">Current setup</div>
+                                        <h6 class="mb-1">Existing custom ID rules</h6>
+                                        <div class="small text-muted">Edit the rule parts already used to generate item IDs. Saving here only updates current rules.</div>
+                                    </div>
+                                    <span class="badge text-bg-primary field-count-badge">@Model.ExistingRuleForms.Count rule(s)</span>
+                                </div>
+
+                                @if (Model.ExistingRuleForms.Count == 0)
+                                {
+                                    <div class="alert alert-light border mb-0">No custom ID rules exist yet for this inventory.</div>
+                                }
+                                else
+                                {
+                                    <form asp-action="UpdateCustomIdRules" asp-route-id="@Model.Inventory.Id" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <div class="d-grid gap-3 customid-existing-container">
+                                            @for (var i = 0; i < Model.ExistingRuleForms.Count; i++)
+                                            {
+                                                <div class="field-card field-editor-card customid-existing-row" data-customid-static-row>
+                                                    <input asp-for="ExistingRuleForms[i].Id" type="hidden" />
+                                                    <div class="field-editor-card-top">
+                                                        <div class="field-editor-index">#@Model.ExistingRuleForms[i].PartOrder</div>
+                                                        <div class="small text-muted">Existing rule part</div>
+                                                    </div>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-3">
+                                                            <label class="form-label">Part order</label>
+                                                            <input asp-for="ExistingRuleForms[i].PartOrder" class="form-control customid-order-input" />
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label">Part type</label>
+                                                            <select asp-for="ExistingRuleForms[i].PartType" class="form-select customid-type-input" asp-items="Html.GetEnumSelectList<CustomIdPartType>()"></select>
+                                                        </div>
+                                                        <div class="col-md-5">
+                                                            <label class="form-label">Format</label>
+                                                            <input asp-for="ExistingRuleForms[i].Format" class="form-control customid-format-input" placeholder="D6, yyyy, etc." />
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <label class="form-label">Static text value</label>
+                                                            <input asp-for="ExistingRuleForms[i].StaticTextValue" class="form-control customid-static-input" placeholder="BOOK-" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div class="mt-3">
+                                            <button class="btn btn-primary" type="submit">Update existing rules</button>
+                                        </div>
+                                    </form>
+                                }
+                            </div>
+
+                            <div class="field-section-panel">
+                                <form asp-action="AddCustomIdRule" asp-route-id="@Model.Inventory.Id" method="post" id="customIdRuleForm">
+                                    @Html.AntiForgeryToken()
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <div class="field-section-eyebrow">Append new parts</div>
+                                            <h6 class="mb-1">Add new custom ID rules</h6>
+                                            <div class="small text-muted">Append new parts without overwriting the existing rule structure.</div>
+                                        </div>
+                                        <button class="btn btn-outline-primary btn-sm" type="button" id="addCustomIdRowButton">
+                                            <i class="fa-solid fa-plus me-1"></i>Add part
+                                        </button>
+                                    </div>
+
+                                    <div id="bulkCustomIdRows" class="d-grid gap-3" data-next-order-start="@Model.NextRulePartOrderStart">
+                                        @for (var i = 0; i < Model.RuleForms.Count; i++)
+                                        {
+                                            <div class="field-card bulk-customid-row" data-customid-row>
+                                                <div class="row g-3">
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Part order</label>
+                                                        <input asp-for="RuleForms[i].PartOrder" class="form-control customid-order-input" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Part type</label>
+                                                        <select asp-for="RuleForms[i].PartType" class="form-select customid-type-input" asp-items="Html.GetEnumSelectList<CustomIdPartType>()"></select>
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <label class="form-label">Format</label>
+                                                        <input asp-for="RuleForms[i].Format" class="form-control customid-format-input" placeholder="D6, yyyy, etc." />
+                                                    </div>
+                                                    <div class="col-md-9">
+                                                        <label class="form-label">Static text value</label>
+                                                        <input asp-for="RuleForms[i].StaticTextValue" class="form-control customid-static-input" placeholder="BOOK-" />
+                                                    </div>
+                                                    <div class="col-md-3 d-flex align-items-end justify-content-end">
+                                                        <button class="btn btn-outline-danger btn-sm remove-customid-row" type="button">
+                                                            <i class="fa-solid fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="mt-3">
+                                        <button class="btn btn-primary" type="submit">Add new rules</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <template id="bulkCustomIdRowTemplate">
+                            <div class="field-card bulk-customid-row" data-customid-row>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Part order</label>
+                                        <input name="RuleForms[__index__].PartOrder" class="form-control customid-order-input" value="__order__" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Part type</label>
+                                        <select name="RuleForms[__index__].PartType" class="form-select customid-type-input">
+                                            @foreach (var option in Html.GetEnumSelectList<CustomIdPartType>())
+                                            {
+                                                <option value="@option.Value">@option.Text</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label">Format</label>
+                                        <input name="RuleForms[__index__].Format" class="form-control customid-format-input" placeholder="D6, yyyy, etc." />
+                                    </div>
+                                    <div class="col-md-9">
+                                        <label class="form-label">Static text value</label>
+                                        <input name="RuleForms[__index__].StaticTextValue" class="form-control customid-static-input" placeholder="BOOK-" />
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end justify-content-end">
+                                        <button class="btn btn-outline-danger btn-sm remove-customid-row" type="button">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="card border-primary h-100" id="customIdPreviewCard">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1">Live preview</h6>
+                                        <div class="small text-muted">Sample output for the rule you are preparing now.</div>
+                                    </div>
+                                    <span class="badge text-bg-primary" id="customIdPreviewType">StaticText</span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="text-muted small mb-1">Current part preview</div>
+                                    <div class="p-3 rounded bg-light border">
+                                        <code class="fs-5" id="customIdPreviewValue">BOOK-</code>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="text-muted small mb-1">Combined sample ID</div>
+                                    <div class="p-3 rounded bg-dark text-white border">
+                                        <code class="fs-6 text-white" id="customIdPreviewCombined">INV-2026001</code>
+                                    </div>
+                                </div>
+
+                                <div class="row g-2 small">
+                                    <div class="col-6">
+                                        <div class="text-muted">Part order</div>
+                                        <div class="fw-semibold" id="customIdPreviewOrder">1</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-muted">Format used</div>
+                                        <div class="fw-semibold" id="customIdPreviewFormat">-</div>
+                                    </div>
+                                </div>
+
+                                <hr />
+                                <div class="small text-muted" id="customIdPreviewHint">
+                                    Static text values are appended exactly as written.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="tab-pane fade" id="access">
+            @if (!Model.Inventory.CanManageInventory)
+            {
+                <div class="alert alert-warning mb-0">Only the owner or an admin can update access settings.</div>
+            }
+            else
+            {
+                <form asp-action="UpdateAccess" asp-route-id="@Model.Inventory.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Current explicit access list</h6>
+                            <span class="badge text-bg-primary" data-access-existing-count>@Model.ExistingAccesses.Count user(s)</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Created</th>
+                                        <th>Updated</th>
+                                        <th class="text-end">Remove</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-access-existing-body>
+                                @if (Model.ExistingAccesses.Count == 0)
+                                {
+                                    <tr data-access-empty-row>
+                                        <td colspan="6" class="text-muted">No users have explicit access yet.</td>
+                                    </tr>
+                                }
+                                @foreach (var access in Model.ExistingAccesses)
+                                {
+                                    <tr data-access-existing-row data-user-id="@access.UserId">
+                                        <td>
+                                            <div class="fw-semibold">@access.UserName</div>
+                                            <div class="small text-muted"><code>@access.UserId</code></div>
+                                        </td>
+                                        <td>@access.Email</td>
+                                        <td>
+                                            @if (access.IsAdmin)
+                                            {
+                                                <span class="badge text-bg-warning">Admin</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge text-bg-light">User</span>
+                                            }
+                                        </td>
+                                        <td>@access.CreatedAtUtc.ToLocalTime().ToString("g")</td>
+                                        <td>@access.UpdatedAtUtc.ToLocalTime().ToString("g")</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-outline-danger btn-sm" type="button" data-remove-access-user data-user-id="@access.UserId" title="Remove this user from explicit access">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <label class="form-label">Write access mode</label>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <input class="btn-check" type="radio" name="AccessForm.IsPublic" id="accessVisibilityRestricted" value="false" checked="@(!Model.AccessForm.IsPublic)" />
+                            <label class="card h-100 border-2 shadow-sm access-mode-card @(!Model.AccessForm.IsPublic ? "border-primary" : "")" for="accessVisibilityRestricted">
+                                <div class="card-body">
+                                    <div class="fw-semibold mb-1">Only owner/admin + explicit users</div>
+                                    <div class="small text-muted">Item writing is limited to managers and the user IDs listed below.</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-md-6">
+                            <input class="btn-check" type="radio" name="AccessForm.IsPublic" id="accessVisibilityShared" value="true" checked="@(Model.AccessForm.IsPublic)" />
+                            <label class="card h-100 border-2 shadow-sm access-mode-card @(Model.AccessForm.IsPublic ? "border-primary" : "")" for="accessVisibilityShared">
+                                <div class="card-body">
+                                    <div class="fw-semibold mb-1">Allow authenticated item writers</div>
+                                    <div class="small text-muted">Any signed-in user can write items, plus the explicit list stays available.</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="access-manager-panel" data-access-manager data-search-url="@Url.Action("SearchAccessUsers", "Inventory", new { id = Model.Inventory.Id })">
+                        <div class="d-flex justify-content-between align-items-center mb-2 gap-3 flex-wrap">
+                            <div>
+                                <label class="form-label mb-1">Explicit access users</label>
+                                <div class="small text-muted">Search by username or email, then add users to the explicit access list. This list is preserved even when shared writing is enabled.</div>
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="search" class="form-control" placeholder="Search users by username or email" data-access-search-input autocomplete="off" />
+                        </div>
+                        <div class="list-group shadow-sm mb-3 d-none" data-access-search-results></div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Selected users to save</h6>
+                            <span class="badge text-bg-secondary">Pending changes</span>
+                        </div>
+                        <div class="selected-access-users mb-2" data-access-selected-list>
+                            @if (Model.ExistingAccesses.Count == 0)
+                            {
+                                <div class="small text-muted" data-access-empty-state>No explicit users selected yet.</div>
+                            }
+                            @foreach (var access in Model.ExistingAccesses)
+                            {
+                                <div class="selected-access-user" data-user-id="@access.UserId">
+                                    <div class="selected-access-user-main">
+                                        <div class="fw-semibold">@access.UserName</div>
+                                        <div class="small text-muted">@access.Email</div>
+                                    </div>
+                                    <button class="btn btn-outline-danger btn-sm" type="button" data-remove-access-user>
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                    <input type="hidden" name="AccessForm.UserIds" value="@access.UserId" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="form-text">Managers are always allowed. Users picked from search appear in the selected list first. Click save to persist them into the current explicit access list.</div>
+                    <button class="btn btn-primary mt-3" type="submit">Save access changes</button>
+                </form>
+            }
+        </div>
+        <div class="tab-pane fade" id="discussion">
+            @if (!Model.IsAuthenticated)
+            {
+                <div class="alert alert-warning mb-0">Sign in to comment on this inventory.</div>
+            }
+            else
+            {
+                <div class="row g-4" id="inventoryDiscussionRoot" data-inventory-id="@Model.Inventory.Id" data-comment-hub-url="@commentHubUrl">
+                    <div class="col-lg-7">
+                        <form asp-action="AddComment" asp-route-id="@Model.Inventory.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <input asp-for="CommentForm.InventoryId" type="hidden" />
+                            <label class="form-label">Write a comment</label>
+                            <textarea asp-for="CommentForm.Content" class="form-control" rows="6" placeholder="Share context, notes or feedback for this inventory."></textarea>
+                            <div class="form-text">Discussion now reads from the backend comment service and listens for live new-comment events through SignalR.</div>
+                            <button class="btn btn-primary mt-3" type="submit">Send comment</button>
+                        </form>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="card border-0 bg-body-tertiary mb-3">
+                            <div class="card-body">
+                                <h6 class="mb-2">Thread summary</h6>
+                                <div class="small text-muted"><span id="commentThreadCount">@Model.Comments.Count</span> comment(s) loaded from the backend.</div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-3" id="inventoryCommentList">
+                            @if (Model.Comments.Count == 0)
+                            {
+                                <div class="alert alert-light border mb-0" id="inventoryCommentEmptyState">No comments have been posted for this inventory yet.</div>
+                            }
+                            else
+                            {
+                                @foreach (var comment in Model.Comments)
+                                {
+                                    <div class="card border" data-comment-id="@comment.Id">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="fw-semibold">@comment.AuthorLabel</div>
+                                                    <div class="small text-muted">
+                                                        Posted @comment.CreatedAtUtc.ToLocalTime().ToString("g")
+                                                        @if (comment.UpdatedAtUtc > comment.CreatedAtUtc)
+                                                        {
+                                                            <span> - Updated @comment.UpdatedAtUtc.ToLocalTime().ToString("g")</span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                @if (comment.CanDelete)
+                                                {
+                                                    <form asp-action="DeleteComment" asp-route-id="@Model.Inventory.Id" method="post" onsubmit="return confirm('Delete this comment?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="commentId" value="@comment.Id" />
+                                                        <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
+                                                    </form>
+                                                }
+                                            </div>
+                                            <div class="mt-3">@comment.Content</div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

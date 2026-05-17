@@ -1,9 +1,13 @@
+@{
+    var layoutState = ViewData["LayoutState"] as LayoutViewModel ?? new LayoutViewModel();
+    ViewData["Title"] ??= "Inventory Management";
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@(((ViewData["LocalizationState"] as UiLocalizationViewModel)?.LanguageCode) ?? "tr")" data-bs-theme="@(layoutState.User?.PreferredTheme == ThemeType.Dark ? "dark" : "light")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] - Inventory Management UI</title>
+    <title>@ViewData["Title"] - @Html.T("shared.app.name", "Inventory Management UI")</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-beta3/dist/css/adminlte.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
@@ -15,29 +19,41 @@
         <div class="container-fluid">
             <ul class="navbar-nav">
                 <li class="nav-item"><a class="nav-link" data-lte-toggle="sidebar" href="#"><i class="fa-solid fa-bars"></i></a></li>
-                <li class="nav-item d-none d-md-block"><a asp-controller="Home" asp-action="Index" class="nav-link">Home</a></li>
-                <li class="nav-item d-none d-md-block"><a asp-controller="Inventory" asp-action="Index" class="nav-link">Inventories</a></li>
+                <li class="nav-item d-none d-md-block"><a asp-controller="Home" asp-action="Index" class="nav-link">@Html.T("nav.home", "Home")</a></li>
+                <li class="nav-item d-none d-md-block"><a asp-controller="Inventory" asp-action="Index" class="nav-link">@Html.T("nav.inventories", "Inventories")</a></li>
             </ul>
             <form class="d-flex ms-auto me-3 header-search" asp-controller="Search" asp-action="Results" method="get">
                 <div class="input-group input-group-sm">
-                    <input class="form-control" name="q" placeholder="Search inventories, items, tags..." />
+                    <input class="form-control" name="q" placeholder="@Html.T("search.placeholder", "Search inventories, items, tags...")" value="@(Context.Request.Query["q"])" />
                     <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
                 </div>
             </form>
-            <ul class="navbar-nav">
-                <li class="nav-item dropdown">
-                    <a class="nav-link" data-bs-toggle="dropdown" href="#"><i class="fa-solid fa-language"></i> EN</a>
-                    <div class="dropdown-menu dropdown-menu-end">
-                        <a class="dropdown-item active" href="#">English</a>
-                        <a class="dropdown-item" href="#">Turkish</a>
-                    </div>
+            <ul class="navbar-nav header-actions">
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center gap-2" asp-controller="Profile" asp-action="Index">
+                        <i class="fa-solid fa-language"></i>
+                        <span class="header-action-text">@(layoutState.User?.PreferredLanguage.ToString() ?? "Language")</span>
+                    </a>
                 </li>
-                <li class="nav-item"><a class="nav-link" href="#" id="themeToggle"><i class="fa-solid fa-moon"></i></a></li>
+                <li class="nav-item"><a class="nav-link" href="#" id="themeToggle"><i class="fa-solid fa-circle-half-stroke"></i></a></li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link" data-bs-toggle="dropdown" href="#"><i class="fa-regular fa-user"></i> Alex Morgan</a>
+                    <a class="nav-link d-flex align-items-center gap-2" data-bs-toggle="dropdown" href="#">
+                        <i class="fa-regular fa-user"></i>
+                        <span class="header-user-text">@layoutState.DisplayName</span>
+                    </a>
                     <div class="dropdown-menu dropdown-menu-end">
-                        <a class="dropdown-item" asp-controller="Profile" asp-action="Index">Profile</a>
-                        <a class="dropdown-item" asp-controller="Account" asp-action="Login">Logout</a>
+                        @if (layoutState.IsAuthenticated)
+                        {
+                            <a class="dropdown-item" asp-controller="Profile" asp-action="Index">@Html.T("profile.title", "Profile")</a>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="px-3 py-1">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-link dropdown-item px-0" type="submit">@Html.T("auth.logout", "Logout")</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a class="dropdown-item" asp-controller="Account" asp-action="Login">@Html.T("auth.login", "Login")</a>
+                        }
                     </div>
                 </li>
             </ul>
@@ -52,17 +68,19 @@
         <div class="sidebar-wrapper">
             <nav class="mt-2">
                 <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu">
-                    <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index"><i class="nav-icon fa-solid fa-chart-line"></i><p>Dashboard</p></a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Inventory" asp-action="Index"><i class="nav-icon fa-solid fa-table-list"></i><p>Inventory Catalog</p></a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Inventory" asp-action="Create"><i class="nav-icon fa-solid fa-wand-magic-sparkles"></i><p>Create Wizard</p></a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Inventory" asp-action="Details" asp-route-id="1"><i class="nav-icon fa-solid fa-boxes-stacked"></i><p>Inventory Workspace</p></a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Item" asp-action="Create" asp-route-inventoryId="1"><i class="nav-icon fa-solid fa-plus"></i><p>Add Item to Books</p></a></li>
-                    <li class="nav-header">MANAGEMENT</li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Profile" asp-action="Index"><i class="nav-icon fa-solid fa-user-gear"></i><p>My Page</p></a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Users"><i class="nav-icon fa-solid fa-users-gear"></i><p>Admin Users</p></a></li>
-                    <li class="nav-header">SYSTEM STATES</li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Error" asp-action="Unauthorized"><i class="nav-icon fa-solid fa-lock"></i><p>401 Unauthorized</p></a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Error" asp-action="Forbidden"><i class="nav-icon fa-solid fa-ban"></i><p>403 Forbidden</p></a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index"><i class="nav-icon fa-solid fa-chart-line"></i><p>@Html.T("dashboard.title", "Dashboard")</p></a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Inventory" asp-action="Index"><i class="nav-icon fa-solid fa-table-list"></i><p>@Html.T("inventory.catalog.title", "Inventory Catalog")</p></a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Inventory" asp-action="Create"><i class="nav-icon fa-solid fa-wand-magic-sparkles"></i><p>@Html.T("inventory.create.title", "Create Inventory")</p></a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Search" asp-action="Results"><i class="nav-icon fa-solid fa-magnifying-glass"></i><p>@Html.T("search.title", "Search")</p></a></li>
+                    <li class="nav-header">@Html.T("section.management", "MANAGEMENT")</li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Profile" asp-action="Index"><i class="nav-icon fa-solid fa-user-gear"></i><p>@Html.T("profile.page.title", "My Page")</p></a></li>
+                    @if (layoutState.User?.IsAdmin == true)
+                    {
+                        <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Users"><i class="nav-icon fa-solid fa-users-gear"></i><p>@Html.T("admin.users.title", "Admin Users")</p></a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Categories"><i class="nav-icon fa-solid fa-layer-group"></i><p>Categories</p></a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Tags"><i class="nav-icon fa-solid fa-tags"></i><p>Tags</p></a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Localization"><i class="nav-icon fa-solid fa-language"></i><p>Localization</p></a></li>
+                    }
                 </ul>
             </nav>
         </div>
@@ -72,19 +90,33 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-sm-8"><h3 class="mb-0">@ViewData["Title"]</h3></div>
-                    <div class="col-sm-4"><ol class="breadcrumb float-sm-end"><li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li><li class="breadcrumb-item active">@ViewData["Title"]</li></ol></div>
+                    <div class="col-sm-4"><ol class="breadcrumb float-sm-end"><li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">@Html.T("nav.home", "Home")</a></li><li class="breadcrumb-item active">@ViewData["Title"]</li></ol></div>
                 </div>
             </div>
         </div>
         <div class="app-content">
             <div class="container-fluid">
+                @if (TempData["SuccessMessage"] is string successMessage)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @successMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] is string errorMessage)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @errorMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
                 @RenderBody()
             </div>
         </div>
     </main>
     <footer class="app-footer">
-        <strong>Inventory Management UI Prototype</strong>
-        <div class="float-end d-none d-sm-inline">AdminLTE + ASP.NET Core MVC</div>
+        <strong>@Html.T("shared.app.name", "Inventory Management UI")</strong>
+        <div class="float-end d-none d-sm-inline">@Html.T("shared.footer.stack", "AdminLTE + ASP.NET Core MVC")</div>
     </footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

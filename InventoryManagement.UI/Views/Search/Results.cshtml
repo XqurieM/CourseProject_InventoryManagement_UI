@@ -1,3 +1,141 @@
-@{ ViewData["Title"] = "Search Results"; }
-<div class="card mb-3"><div class="card-body"><div class="input-group input-group-lg"><input class="form-control" value="books"/><button class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Search</button></div><div class="mt-2 small text-muted">Search covers inventories, items and tags. This page is visible to unauthenticated users in read-only mode.</div></div></div>
-<div class="row g-3"><div class="col-lg-7"><div class="card"><div class="card-header"><h5 class="mb-0">Inventories</h5></div><div class="card-body table-responsive p-0"><table class="table table-hover mb-0"><thead><tr><th>Title</th><th>Description</th><th>Creator</th><th>Items</th></tr></thead><tbody><tr><td><a asp-controller="Inventory" asp-action="Details" asp-route-id="1">Library Books 2026</a></td><td>Book catalog with custom fields.</td><td>Nora Stone</td><td>942</td></tr><tr><td>Engineering Books</td><td>Technical books and documents.</td><td>Admin Team</td><td>113</td></tr></tbody></table></div></div></div><div class="col-lg-5"><div class="card mb-3"><div class="card-header"><h5 class="mb-0">Items</h5></div><div class="card-body table-responsive p-0"><table class="table mb-0"><thead><tr><th>Item</th><th>Inventory</th><th>Custom ID</th></tr></thead><tbody><tr><td><a asp-controller="Item" asp-action="Details" asp-route-id="1">Clean Code</a></td><td>Library Books</td><td><code>BOOK-000184</code></td></tr><tr><td>Refactoring</td><td>Library Books</td><td><code>BOOK-000186</code></td></tr></tbody></table></div></div><div class="card"><div class="card-header"><h5 class="mb-0">Matching tags</h5></div><div class="card-body tag-cloud"><a class="fs-3" href="#">books</a><a class="fs-5" href="#">book-archive</a><a class="fs-6" href="#">library-books</a></div></div></div></div>
+@model SearchResultsPageViewModel
+@{
+    ViewData["Title"] = Html.T("title", "Search Results");
+    var totalResults = Model.Inventories.Count + Model.Items.Count;
+}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="input-group input-group-lg">
+            <input class="form-control" name="q" value="@Model.Query" placeholder="@Html.T("placeholder.query", "Search inventories, items, tags or comments")" />
+            <button class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> @Html.T("actions.search", "Search")</button>
+        </form>
+        <div class="mt-2 small text-muted">
+            @if (Model.WasSearched)
+            {
+                <span>@totalResults result(s) loaded from the backend global search service.</span>
+            }
+            else
+            {
+                <span>Type a term to search across inventories and items.</span>
+            }
+        </div>
+    </div>
+</div>
+
+@if (!Model.WasSearched)
+{
+    <div class="card">
+        <div class="card-body text-center py-4 text-muted">
+            Use the search box above to begin.
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">@Html.T("inventories.title", "Inventories")</h5>
+                    <span class="badge text-bg-primary">@Model.Inventories.Count</span>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>@Html.T("table.title", "Title")</th>
+                                <th>@Html.T("table.category", "Category")</th>
+                                <th>@Html.T("table.visibility", "Visibility")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @if (Model.Inventories.Count == 0)
+                        {
+                            <tr><td colspan="3" class="text-center text-muted py-4">No matching inventories.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var inventory in Model.Inventories)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-start gap-3 py-1">
+                                            @if (!string.IsNullOrWhiteSpace(inventory.ImageUrl))
+                                            {
+                                                <img src="@inventory.ImageUrl" alt="@inventory.Title" class="inventory-thumb inventory-thumb-md rounded border flex-shrink-0" />
+                                            }
+                                            else
+                                            {
+                                                <div class="inventory-thumb inventory-thumb-md rounded border bg-light text-muted d-flex align-items-center justify-content-center flex-shrink-0">
+                                                    <i class="fa-solid fa-image"></i>
+                                                </div>
+                                            }
+                                            <div class="inventory-media-body">
+                                                <a asp-controller="Inventory" asp-action="Details" asp-route-id="@inventory.Id" class="inventory-title">@inventory.Title</a>
+                                                @if (!string.IsNullOrWhiteSpace(inventory.Description))
+                                                {
+                                                    <div class="small text-muted mt-1">@inventory.Description</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@inventory.CategoryName</td>
+                                    <td>
+                                        <span class="badge @(inventory.IsPublic ? "text-bg-success" : "text-bg-secondary")">
+                                            @(inventory.IsPublic ? "Public" : "Private")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">@Html.T("items.title", "Items")</h5>
+                    <span class="badge text-bg-primary">@Model.Items.Count</span>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>@Html.T("table.item", "Item")</th>
+                                <th>@Html.T("table.customId", "Custom ID")</th>
+                                <th>@Html.T("table.likes", "Likes")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @if (Model.Items.Count == 0)
+                        {
+                            <tr><td colspan="3" class="text-center text-muted py-4">No matching items.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-controller="Item" asp-action="Details" asp-route-id="@item.Id" asp-route-inventoryId="@item.InventoryId" class="fw-semibold text-decoration-none">
+                                            @item.ItemName
+                                        </a>
+                                    </td>
+                                    <td><code>@item.CustomId</code></td>
+                                    <td>
+                                        <span class="badge @(item.IsLikedByCurrentUser ? "text-bg-danger" : "text-bg-light")">
+                                            <i class="fa-solid fa-heart me-1"></i>@item.LikeCount
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}

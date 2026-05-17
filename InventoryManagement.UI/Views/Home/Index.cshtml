@@ -1,22 +1,110 @@
+@model DashboardPageViewModel
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = Html.T("title", "Dashboard");
 }
 <div class="row g-3 mb-3">
-  <div class="col-md-3"><div class="small-box text-bg-primary"><div class="inner"><h3>128</h3><p>Total Inventories</p></div><i class="small-box-icon fa-solid fa-box-archive"></i></div></div>
-  <div class="col-md-3"><div class="small-box text-bg-success"><div class="inner"><h3>4,862</h3><p>Total Items</p></div><i class="small-box-icon fa-solid fa-barcode"></i></div></div>
-  <div class="col-md-3"><div class="small-box text-bg-warning"><div class="inner"><h3>37</h3><p>Public Inventories</p></div><i class="small-box-icon fa-solid fa-globe"></i></div></div>
-  <div class="col-md-3"><div class="small-box text-bg-danger"><div class="inner"><h3>214</h3><p>Active Contributors</p></div><i class="small-box-icon fa-solid fa-users"></i></div></div>
+    <div class="col-md-3"><div class="small-box text-bg-primary"><div class="inner"><h3>@Model.Statistics.TotalInventoriesCount</h3><p>@Html.T("stats.totalInventories", "Total Inventories")</p></div><i class="small-box-icon fa-solid fa-box-archive"></i></div></div>
+    <div class="col-md-3"><div class="small-box text-bg-success"><div class="inner"><h3>@Model.Statistics.TotalItemsCount</h3><p>@Html.T("stats.totalItems", "Total Items")</p></div><i class="small-box-icon fa-solid fa-barcode"></i></div></div>
+    <div class="col-md-3"><div class="small-box text-bg-warning"><div class="inner"><h3>@Model.Statistics.PublicInventoriesCount</h3><p>@Html.T("stats.publicInventories", "Public Inventories")</p></div><i class="small-box-icon fa-solid fa-globe"></i></div></div>
+    <div class="col-md-3"><div class="small-box text-bg-danger"><div class="inner"><h3>@Model.Statistics.ActiveContributorsCount</h3><p>@Html.T("stats.activeContributors", "Active Contributors")</p></div><i class="small-box-icon fa-solid fa-users"></i></div></div>
 </div>
 <div class="row g-3">
-  <div class="col-lg-8">
-    <div class="card"><div class="card-header d-flex justify-content-between align-items-center"><h5 class="mb-0">Latest inventories</h5><a class="btn btn-sm btn-primary" asp-controller="Inventory" asp-action="Create">Create Inventory</a></div><div class="card-body table-responsive p-0"><table class="table table-hover mb-0"><thead><tr><th>Inventory</th><th>Category</th><th>Creator</th><th>Tags</th><th>Items</th><th>Access</th></tr></thead><tbody>
-      <tr><td><a asp-controller="Inventory" asp-action="Details" asp-route-id="1" class="fw-semibold">Library Books 2026</a><div class="text-muted small">Books, authors, years and document links</div></td><td>Book</td><td>Nora Stone</td><td><span class="badge badge-soft">library</span> <span class="badge badge-soft">books</span></td><td>942</td><td><span class="badge text-bg-success">Public write</span></td></tr>
-      <tr><td><a asp-controller="Inventory" asp-action="Details" asp-route-id="2" class="fw-semibold">Office Equipment</a><div class="text-muted small">Laptops, monitors, printers and accessories</div></td><td>Equipment</td><td>Alex Morgan</td><td><span class="badge badge-soft">office</span> <span class="badge badge-soft">hardware</span></td><td>315</td><td><span class="badge text-bg-secondary">Private</span></td></tr>
-      <tr><td><a asp-controller="Inventory" asp-action="Details" asp-route-id="3" class="fw-semibold">HR Documents Archive</a><div class="text-muted small">Internal document tracking</div></td><td>Document</td><td>Mehmet Kaya</td><td><span class="badge badge-soft">hr</span> <span class="badge badge-soft">docs</span></td><td>77</td><td><span class="badge text-bg-secondary">Private</span></td></tr>
-    </tbody></table></div></div>
-  </div>
-  <div class="col-lg-4">
-    <div class="card mb-3"><div class="card-header"><h5 class="mb-0">Top 5 popular inventories</h5></div><div class="card-body"><ol class="list-group list-group-numbered"><li class="list-group-item d-flex justify-content-between align-items-start"><div><a asp-controller="Inventory" asp-action="Details" asp-route-id="1">Library Books 2026</a><div class="small text-muted">Book</div></div><span class="badge text-bg-primary rounded-pill">942</span></li><li class="list-group-item d-flex justify-content-between"><span>Office Equipment</span><span class="badge text-bg-primary">315</span></li><li class="list-group-item d-flex justify-content-between"><span>Furniture Registry</span><span class="badge text-bg-primary">188</span></li><li class="list-group-item d-flex justify-content-between"><span>HR Documents Archive</span><span class="badge text-bg-primary">77</span></li><li class="list-group-item d-flex justify-content-between"><span>Warehouse Tools</span><span class="badge text-bg-primary">54</span></li></ol></div></div>
-    <div class="card"><div class="card-header"><h5 class="mb-0">Tag cloud</h5></div><div class="card-body tag-cloud"><a asp-controller="Search" asp-action="Results" class="fs-3">books</a><a class="fs-5" asp-controller="Search" asp-action="Results">hardware</a><a class="fs-6" asp-controller="Search" asp-action="Results">documents</a><a class="fs-4" asp-controller="Search" asp-action="Results">library</a><a class="fs-6" asp-controller="Search" asp-action="Results">office</a><a class="fs-5" asp-controller="Search" asp-action="Results">asset</a><a class="fs-6" asp-controller="Search" asp-action="Results">hr</a></div></div>
-  </div>
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">@Html.T("latest.title", "Latest inventories")</h5>
+                <a class="btn btn-sm btn-primary" asp-controller="Inventory" asp-action="Create">@Html.T("latest.create", "Create Inventory")</a>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr><th>@Html.T("table.inventory", "Inventory")</th><th>@Html.T("table.category", "Category")</th><th>@Html.T("table.creator", "Creator")</th><th>@Html.T("table.tags", "Tags")</th><th>@Html.T("table.items", "Items")</th><th>@Html.T("table.access", "Access")</th></tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var inventory in Model.LatestInventories)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-start gap-3 py-1">
+                                    @if (!string.IsNullOrWhiteSpace(inventory.ImageUrl))
+                                    {
+                                    <img src="@inventory.ImageUrl" alt="@inventory.Title" class="inventory-thumb inventory-thumb-md rounded border flex-shrink-0" />
+                                }
+                                else
+                                {
+                                    <div class="inventory-thumb inventory-thumb-md rounded border bg-light text-muted d-flex align-items-center justify-content-center flex-shrink-0">
+                                        <i class="fa-solid fa-image"></i>
+                                    </div>
+                                }
+                                <div class="inventory-media-body">
+                                    <a asp-controller="Inventory" asp-action="Details" asp-route-id="@inventory.Id" class="inventory-title fw-semibold text-decoration-none">@inventory.Title</a>
+                                    <div class="inventory-description text-muted small">@(string.IsNullOrWhiteSpace(inventory.Description) ? "-" : inventory.Description)</div>
+                                </div>
+                            </div>
+                        </td>
+                            <td>@inventory.CategoryName</td>
+                            <td>@inventory.UserName</td>
+                            <td>
+                                @foreach (var tag in inventory.Tags ?? [])
+                                {
+                                    <a class="badge badge-soft text-decoration-none"
+                                       asp-controller="Inventory"
+                                       asp-action="ByTag"
+                                       asp-route-tagId="@tag.Id"
+                                       asp-route-tagName="@tag.Name">@tag.Name</a>
+                                }
+                            </td>
+                            <td>@inventory.ItemCount</td>
+                            <td><span class="badge @(inventory.IsPublic ? "text-bg-success" : "text-bg-secondary")">@(inventory.IsPublic ? Html.T("access.public", "Public") : Html.T("access.private", "Private"))</span></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">@Html.T("popular.title", "Top 5 popular inventories")</h5></div>
+            <div class="card-body">
+                <ol class="list-group list-group-numbered">
+                    @foreach (var inventory in Model.PopularInventories)
+                    {
+                        <li class="list-group-item popular-list-item d-flex justify-content-between align-items-start gap-3">
+                            <div class="d-flex align-items-start gap-3 flex-grow-1 min-w-0">
+                                @if (!string.IsNullOrWhiteSpace(inventory.ImageUrl))
+                                {
+                                    <img src="@inventory.ImageUrl" alt="@inventory.Title" class="inventory-thumb inventory-thumb-sm rounded border flex-shrink-0" />
+                                }
+                                else
+                                {
+                                    <div class="inventory-thumb inventory-thumb-sm rounded border bg-light text-muted d-flex align-items-center justify-content-center flex-shrink-0">
+                                        <i class="fa-solid fa-image"></i>
+                                    </div>
+                                }
+                                <div class="inventory-media-body">
+                                    <a asp-controller="Inventory" asp-action="Details" asp-route-id="@inventory.Id" class="inventory-title">@inventory.Title</a>
+                                    <div class="small text-muted text-break">@inventory.CategoryName</div>
+                                </div>
+                            </div>
+                            <span class="badge text-bg-primary rounded-pill popular-count-badge">@inventory.ItemCount</span>
+                        </li>
+                    }
+                </ol>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">@Html.T("tags.title", "Tag cloud")</h5></div>
+            <div class="card-body tag-cloud">
+                @foreach (var tag in Model.Tags)
+                {
+                    <a class="fs-6"
+                       asp-controller="Inventory"
+                       asp-action="ByTag"
+                       asp-route-tagId="@tag.Id"
+                       asp-route-tagName="@tag.Name">@tag.Name</a>
+                }
+            </div>
+        </div>
+    </div>
 </div>

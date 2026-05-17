@@ -1,0 +1,95 @@
+@model AdminUserDetailsPageViewModel
+@{
+    ViewData["Title"] = "Admin User Details";
+}
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:88px;height:88px;">
+                    <i class="fa-solid fa-user fa-2x"></i>
+                </div>
+                <h4 class="mb-1">@Model.User.UserName</h4>
+                <div class="text-muted mb-3">@Model.User.Email</div>
+                <span class="badge @(Model.User.IsAdmin ? "text-bg-danger" : "text-bg-secondary")">@(Model.User.IsAdmin ? "Admin" : "User")</span>
+                <span class="badge @(Model.User.IsBlocked ? "text-bg-dark" : "text-bg-success") ms-1">@(Model.User.IsBlocked ? "Blocked" : "Active")</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">Account details</h5></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Id</dt><dd class="col-sm-8"><code>@Model.User.Id</code></dd>
+                    <dt class="col-sm-4">User name</dt><dd class="col-sm-8">@Model.User.UserName</dd>
+                    <dt class="col-sm-4">Email</dt><dd class="col-sm-8">@Model.User.Email</dd>
+                    <dt class="col-sm-4">Preferred language</dt><dd class="col-sm-8">@Model.User.PreferredLanguage</dd>
+                    <dt class="col-sm-4">Preferred theme</dt><dd class="col-sm-8">@Model.User.PreferredTheme</dd>
+                </dl>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Quick actions</h5></div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <form asp-action="Block" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="userId" value="@Model.User.Id" />
+                        @if (Model.User.IsBlocked)
+                        {
+                            <button class="btn btn-outline-warning" type="submit" disabled>Block</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-warning" type="submit">Block</button>
+                        }
+                    </form>
+                    <form asp-action="Unblock" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="userId" value="@Model.User.Id" />
+                        @if (!Model.User.IsBlocked)
+                        {
+                            <button class="btn btn-outline-success" type="submit" disabled>Unblock</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-success" type="submit">Unblock</button>
+                        }
+                    </form>
+                    <form asp-action="GrantAdmin" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="userId" value="@Model.User.Id" />
+                        @if (Model.User.IsAdmin)
+                        {
+                            <button class="btn btn-outline-primary" type="submit" disabled>Grant admin</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-primary" type="submit">Grant admin</button>
+                        }
+                    </form>
+                    <form asp-action="RevokeAdmin" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="userId" value="@Model.User.Id" />
+                        @if (!Model.User.IsAdmin)
+                        {
+                            <button class="btn btn-outline-secondary" type="submit" disabled>Revoke admin</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-secondary" type="submit">Revoke admin</button>
+                        }
+                    </form>
+                    <form asp-action="Delete" method="post" onsubmit="return confirm('Delete this user?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="userId" value="@Model.User.Id" />
+                        <button class="btn btn-outline-danger" type="submit">Delete</button>
+                    </form>
+                </div>
+                <a class="btn btn-link px-0 mt-3" asp-action="Users">Back to users</a>
+            </div>
+        </div>
+    </div>
+</div>

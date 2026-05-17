@@ -1,7 +1,118 @@
-@{ ViewData["Title"] = "Inventory Catalog"; }
-<div class="card mb-3"><div class="card-body"><div class="row g-2"><div class="col-md-4"><input class="form-control" placeholder="Search by title, description or tag" /></div><div class="col-md-2"><select class="form-select"><option>All categories</option><option>Equipment</option><option>Book</option><option>Furniture</option><option>Document</option></select></div><div class="col-md-2"><select class="form-select"><option>All access</option><option>Public write</option><option>Private</option></select></div><div class="col-md-2"><select class="form-select"><option>Newest</option><option>Most items</option><option>A-Z</option></select></div><div class="col-md-2"><a class="btn btn-primary w-100" asp-action="Create">Create</a></div></div></div></div>
-<div class="card"><div class="card-header"><h5 class="mb-0">All inventories</h5></div><div class="card-body table-responsive p-0"><table class="table table-hover mb-0"><thead><tr><th>Title</th><th>Description</th><th>Category</th><th>Creator</th><th>Tags</th><th>Items</th><th>Updated</th></tr></thead><tbody>
-<tr><td><a asp-action="Details" asp-route-id="1" class="fw-bold">Library Books 2026</a></td><td>Custom book catalog with author, year and annotation fields.</td><td>Book</td><td>Nora Stone</td><td><span class="badge badge-soft">books</span> <span class="badge badge-soft">library</span></td><td>942</td><td>Today</td></tr>
-<tr><td><a asp-action="Details" asp-route-id="2" class="fw-bold">Office Equipment</a></td><td>Managed asset list for laptops, monitors and accessories.</td><td>Equipment</td><td>Alex Morgan</td><td><span class="badge badge-soft">hardware</span></td><td>315</td><td>Yesterday</td></tr>
-<tr><td><a asp-action="Details" asp-route-id="3" class="fw-bold">Furniture Registry</a></td><td>Rooms, floors, purchase dates and condition tracking.</td><td>Furniture</td><td>Admin Team</td><td><span class="badge badge-soft">furniture</span></td><td>188</td><td>Apr 28</td></tr>
-</tbody></table></div></div>
+@model InventoryCatalogPageViewModel
+@{
+    ViewData["Title"] = Html.T("title", "Inventory Catalog");
+}
+@if (Model.RequiresLogin)
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <h4 class="mb-2">@Html.T("login.title", "Sign in to load the catalog")</h4>
+            <p class="text-muted">@Html.T("login.subtitle", "The current backend exposes inventory catalog data through authenticated dashboard endpoints.")</p>
+            <a class="btn btn-primary" asp-controller="Account" asp-action="Login">@Html.T("login.cta", "Go to login")</a>
+        </div>
+    </div>
+}
+else
+{
+    @if (Model.SelectedTagId.HasValue && !string.IsNullOrWhiteSpace(Model.SelectedTagName))
+    {
+        <div class="alert alert-light border d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <div class="fw-semibold">Tagged with @Model.SelectedTagName</div>
+                <div class="small text-muted">This list comes directly from the backend tag inventory service.</div>
+            </div>
+            <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Clear filter</a>
+        </div>
+    }
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2">
+                <div class="col-md-4"><input class="form-control" name="q" value="@Model.Query" placeholder="@Html.T("filters.query", "Search by title, description or tag")" /></div>
+                <div class="col-md-2">
+                    <select class="form-select" name="categoryName">
+                        <option value="">@Html.T("filters.categories", "All categories")</option>
+                        @foreach (var categoryName in Model.CategoryNames)
+                        {
+                            <option value="@categoryName" selected="@(Model.CategoryName == categoryName)">@categoryName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="sort">
+                        @if (Model.Sort == "newest")
+                        {
+                            <option value="newest" selected>@Html.T("filters.sort.newest", "Newest")</option>
+                        }
+                        else
+                        {
+                            <option value="newest">@Html.T("filters.sort.newest", "Newest")</option>
+                        }
+                        @if (Model.Sort == "items")
+                        {
+                            <option value="items" selected>@Html.T("filters.sort.items", "Most items")</option>
+                        }
+                        else
+                        {
+                            <option value="items">@Html.T("filters.sort.items", "Most items")</option>
+                        }
+                        @if (Model.Sort == "az")
+                        {
+                            <option value="az" selected>@Html.T("filters.sort.az", "A-Z")</option>
+                        }
+                        else
+                        {
+                            <option value="az">@Html.T("filters.sort.az", "A-Z")</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2"><button class="btn btn-outline-primary w-100" type="submit">@Html.T("filters.apply", "Apply")</button></div>
+                <div class="col-md-2"><a class="btn btn-primary w-100" asp-action="Create">@Html.T("filters.create", "Create")</a></div>
+            </form>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h5 class="mb-0">@Html.T("list.title", "Inventories from current API lists")</h5></div>
+        <div class="card-body table-responsive p-0">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>@Html.T("table.title", "Title")</th><th>@Html.T("table.description", "Description")</th><th>@Html.T("table.category", "Category")</th><th>@Html.T("table.creator", "Creator")</th><th>@Html.T("table.tags", "Tags")</th><th>@Html.T("table.items", "Items")</th></tr></thead>
+                <tbody>
+                @foreach (var inventory in Model.Inventories)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-start gap-3 py-1">
+                                @if (!string.IsNullOrWhiteSpace(inventory.ImageUrl))
+                                {
+                                    <img src="@inventory.ImageUrl" alt="@inventory.Title" class="inventory-thumb inventory-thumb-md rounded border flex-shrink-0" />
+                                }
+                                else
+                                {
+                                    <div class="inventory-thumb inventory-thumb-md rounded border bg-light text-muted d-flex align-items-center justify-content-center flex-shrink-0">
+                                        <i class="fa-solid fa-image"></i>
+                                    </div>
+                                }
+                                <div class="inventory-media-body">
+                                    <a asp-action="Details" asp-route-id="@inventory.Id" class="inventory-title fw-bold text-decoration-none">@inventory.Title</a>
+                                </div>
+                            </div>
+                        </td>
+                        <td>@inventory.Description</td>
+                        <td>@inventory.CategoryName</td>
+                        <td>@inventory.UserName</td>
+                        <td>
+                            @foreach (var tag in inventory.Tags ?? [])
+                            {
+                                <a class="badge badge-soft text-decoration-none"
+                                   asp-action="ByTag"
+                                   asp-route-tagId="@tag.Id"
+                                   asp-route-tagName="@tag.Name">@tag.Name</a>
+                            }
+                        </td>
+                        <td>@inventory.ItemCount</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
