@@ -29,12 +29,37 @@
                         <span class="badge @(Model.Inventory.IsPublic ? "text-bg-success" : "text-bg-secondary")">@(Model.Inventory.IsPublic ? "Shared item writing" : "Restricted writing")</span>
                     </div>
                     <div class="text-end">
-                        @if (Model.Inventory.CanWriteItems)
-                        {
-                            <a class="btn btn-primary" asp-controller="Item" asp-action="Create" asp-route-inventoryId="@Model.Inventory.Id">
-                                <i class="fa-solid fa-plus me-1"></i>Add item
-                            </a>
-                        }
+                        <div class="d-flex gap-2 justify-content-end">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-download me-1"></i>Export
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Inventory" asp-action="ExportToExcel" asp-route-id="@Model.Inventory.Id">
+                                            <i class="fa-solid fa-file-excel text-success me-2"></i>Export to Excel (.xlsx)
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Inventory" asp-action="ExportToPdf" asp-route-id="@Model.Inventory.Id">
+                                            <i class="fa-solid fa-file-pdf text-danger me-2"></i>Export to PDF (.pdf)
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Inventory" asp-action="ExportToCsv" asp-route-id="@Model.Inventory.Id">
+                                            <i class="fa-solid fa-file-csv text-secondary me-2"></i>Export to CSV
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            @if (Model.Inventory.CanWriteItems)
+                            {
+                                <a class="btn btn-primary" asp-controller="Item" asp-action="Create" asp-route-inventoryId="@Model.Inventory.Id">
+                                    <i class="fa-solid fa-plus me-1"></i>Add item
+                                </a>
+                            }
+                        </div>
                         <div class="small text-muted mt-2">Created @Model.Inventory.CreatedAtUtc.ToLocalTime().ToString("g")</div>
                     </div>
                 </div>

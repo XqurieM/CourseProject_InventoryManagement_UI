@@ -5,6 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>InventoryManagement.UI</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+    <PackageReference Include="QuestPDF" Version="2026.5.0" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\CourseProject_InventoryManagement\CourseProject_InventoryManagement.Application\CourseProject_InventoryManagement.Application.csproj" />

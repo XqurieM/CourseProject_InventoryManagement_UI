@@ -2,6 +2,8 @@ using CourseProject_InventoryManagement.Application.Features.CQRS.Commands.Inven
 using InventoryManagement.UI.Models;
 using InventoryManagement.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
 
 namespace InventoryManagement.UI.Controllers;
 
@@ -301,6 +303,185 @@ public class InventoryController : AppController
 
         SetSuccessMessage("Comment deleted.");
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportToCsv(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _inventoryFacade.GetDetailsAsync(id, cancellationToken);
+        if (!result.IsSuccess || result.Value is null)
+        {
+            return RedirectForFailure(result, fallbackAction: nameof(Index), fallbackController: "Inventory");
+        }
+
+        var inventory = result.Value.Inventory;
+        var itemRows = result.Value.ItemRows;
+        var fields = result.Value.ExistingFields.OrderBy(x => x.DisplayOrder).ToList();
+
+        var builder = new System.Text.StringBuilder();
+
+        builder.Append("Custom ID,Item Name,Likes");
+        foreach (var field in fields)
+        {
+            builder.Append($",\"{field.Name.Replace("\"", "\"\"")}\"");
+        }
+        builder.AppendLine();
+
+        foreach (var row in itemRows)
+        {
+            var customId = $"\"{row.Item.CustomId?.Replace("\"", "\"\"")}\"";
+            var itemName = $"\"{row.Item.ItemName?.Replace("\"", "\"\"")}\"";
+            var likes = row.Item.LikeCount;
+            
+            builder.Append($"{customId},{itemName},{likes}");
+
+            foreach (var field in fields)
+            {
+                var fieldValue = row.FieldValues.FirstOrDefault(x => x.InventoryFieldId == field.Id);
+                var displayVal = fieldValue?.DisplayValue ?? string.Empty;
+                builder.Append($",\"{displayVal.Replace("\"", "\"\"")}\"");
+            }
+            builder.AppendLine();
+        }
+
+        var preamble = System.Text.Encoding.UTF8.GetPreamble();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(builder.ToString());
+        var finalBytes = preamble.Concat(bytes).ToArray();
+
+        return File(finalBytes, "text/csv", $"{inventory.Title}_Export.csv");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportToExcel(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _inventoryFacade.GetDetailsAsync(id, cancellationToken);
+        if (!result.IsSuccess || result.Value is null) return RedirectForFailure(result, fallbackAction: nameof(Index), fallbackController: "Inventory");
+
+        var inventory = result.Value.Inventory;
+        var itemRows = result.Value.ItemRows;
+        var fields = result.Value.ExistingFields.OrderBy(x => x.DisplayOrder).ToList();
+
+        using var workbook = new ClosedXML.Excel.XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Inventory Items");
+
+        var headers = new List<string> { "Custom ID", "Item Name", "Likes" };
+        headers.AddRange(fields.Select(f => f.Name));
+
+        for (int i = 0; i < headers.Count; i++)
+        {
+            var cell = worksheet.Cell(1, i + 1);
+            cell.Value = headers[i];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightGray;
+            cell.Style.Border.BottomBorder = ClosedXML.Excel.XLBorderStyleValues.Thin;
+        }
+
+        for (int rowIdx = 0; rowIdx < itemRows.Count; rowIdx++)
+        {
+            var row = itemRows[rowIdx];
+            worksheet.Cell(rowIdx + 2, 1).Value = row.Item.CustomId;
+            worksheet.Cell(rowIdx + 2, 2).Value = row.Item.ItemName;
+            worksheet.Cell(rowIdx + 2, 3).Value = row.Item.LikeCount;
+
+            for (int colIdx = 0; colIdx < fields.Count; colIdx++)
+            {
+                var field = fields[colIdx];
+                var fieldValue = row.FieldValues.FirstOrDefault(x => x.InventoryFieldId == field.Id);
+                worksheet.Cell(rowIdx + 2, 4 + colIdx).Value = fieldValue?.DisplayValue ?? string.Empty;
+            }
+        }
+
+        worksheet.Columns().AdjustToContents();
+
+        using var stream = new System.IO.MemoryStream();
+        workbook.SaveAs(stream);
+        return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{inventory.Title}_Export.xlsx");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportToPdf(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _inventoryFacade.GetDetailsAsync(id, cancellationToken);
+        if (!result.IsSuccess || result.Value is null) return RedirectForFailure(result, fallbackAction: nameof(Index), fallbackController: "Inventory");
+
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+        var inventory = result.Value.Inventory;
+        var itemRows = result.Value.ItemRows;
+        var fields = result.Value.ExistingFields.OrderBy(x => x.DisplayOrder).ToList();
+
+        var document = QuestPDF.Fluent.Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(QuestPDF.Helpers.PageSizes.A4.Landscape());
+                page.Margin(1, QuestPDF.Infrastructure.Unit.Centimetre);
+                page.PageColor(QuestPDF.Helpers.Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(10));
+
+                page.Header().Element(compose => 
+                {
+                    compose.Column(column =>
+                    {
+                        column.Item().Text($"{inventory.Title} - Inventory Report").SemiBold().FontSize(20).FontColor(QuestPDF.Helpers.Colors.Blue.Darken2);
+                        column.Item().Text($"Category: {inventory.CategoryName} | Exported: {DateTime.Now:g}").FontSize(10).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
+                        column.Item().PaddingBottom(10).LineHorizontal(1).LineColor(QuestPDF.Helpers.Colors.Grey.Lighten2);
+                    });
+                });
+
+                page.Content().Element(compose =>
+                {
+                    compose.Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.ConstantColumn(80);
+                            columns.RelativeColumn(2);
+                            columns.ConstantColumn(40);
+                            foreach (var _ in fields)
+                            {
+                                columns.RelativeColumn();
+                            }
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Background(QuestPDF.Helpers.Colors.Grey.Lighten3).Padding(2).Text("Custom ID").SemiBold();
+                            header.Cell().Background(QuestPDF.Helpers.Colors.Grey.Lighten3).Padding(2).Text("Item Name").SemiBold();
+                            header.Cell().Background(QuestPDF.Helpers.Colors.Grey.Lighten3).Padding(2).Text("Likes").SemiBold();
+                            foreach (var field in fields)
+                            {
+                                header.Cell().Background(QuestPDF.Helpers.Colors.Grey.Lighten3).Padding(2).Text(field.Name).SemiBold();
+                            }
+                        });
+
+                        foreach (var row in itemRows)
+                        {
+                            table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).Padding(2).Text(row.Item.CustomId);
+                            table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).Padding(2).Text(row.Item.ItemName);
+                            table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).Padding(2).Text(row.Item.LikeCount.ToString());
+
+                            foreach (var field in fields)
+                            {
+                                var fieldValue = row.FieldValues.FirstOrDefault(x => x.InventoryFieldId == field.Id);
+                                table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).Padding(2).Text(fieldValue?.DisplayValue ?? string.Empty);
+                            }
+                        }
+                    });
+                });
+
+                page.Footer().AlignCenter().Text(x =>
+                {
+                    x.Span("Page ");
+                    x.CurrentPageNumber();
+                    x.Span(" of ");
+                    x.TotalPages();
+                });
+            });
+        });
+
+        var bytes = document.GeneratePdf();
+        return File(bytes, "application/pdf", $"{inventory.Title}_Export.pdf");
     }
 
     private IActionResult RedirectToInventoryDetailsForFailure(Guid inventoryId, ApiCallResult result, string fallbackMessage)
