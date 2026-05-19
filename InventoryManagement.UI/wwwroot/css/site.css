@@ -175,12 +175,39 @@ body { font-size: .95rem; }
   text-align: left;
 }
 
+.tag-pill-selector {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: .85rem;
+  background: #fff;
+  padding: .75rem .9rem;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.tag-pill-selector:hover {
+  border-color: var(--bs-primary);
+}
+
+.tag-pill-selector:has(input:checked) {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.15rem rgba(13,110,253,.08);
+  background: rgba(13,110,253,.03);
+}
+
 [data-bs-theme="dark"] .access-manager-panel {
   background: #1f242a;
   border-color: #323b44;
 }
 
 [data-bs-theme="dark"] .selected-access-user {
+  background: #252b32;
+  border-color: #36404a;
+}
+
+[data-bs-theme="dark"] .tag-pill-selector {
   background: #252b32;
   border-color: #36404a;
 }

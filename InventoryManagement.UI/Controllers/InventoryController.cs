@@ -1,4 +1,5 @@
 using CourseProject_InventoryManagement.Application.Features.CQRS.Commands.InventoryCommands;
+using CourseProject_InventoryManagement.Application.Features.CQRS.Commands.CommentCommands;
 using InventoryManagement.UI.Models;
 using InventoryManagement.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -139,6 +140,34 @@ public class InventoryController : AppController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteField(Guid id, Guid fieldId, CancellationToken cancellationToken)
+    {
+        var result = await _inventoryFacade.DeleteFieldAsync(id, fieldId, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return RedirectToInventoryDetailsForFailure(id, result, "Field could not be deleted.");
+        }
+
+        SetSuccessMessage("Field deleted.");
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReorderFields(Guid id, InventoryDetailsPageViewModel model, CancellationToken cancellationToken)
+    {
+        var result = await _inventoryFacade.ReorderFieldsAsync(id, model.ExistingFieldForms, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return RedirectToInventoryDetailsForFailure(id, result, "Field order could not be updated.");
+        }
+
+        SetSuccessMessage("Field order updated.");
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Update(Guid id, InventoryDetailsPageViewModel model, CancellationToken cancellationToken)
     {
         if (!_authenticationFacade.IsSignedIn)
@@ -230,6 +259,48 @@ public class InventoryController : AppController
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteCustomIdRule(Guid id, Guid ruleId, CancellationToken cancellationToken)
+    {
+        var result = await _inventoryFacade.DeleteCustomIdRuleAsync(id, ruleId, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return RedirectToInventoryDetailsForFailure(id, result, "Custom ID rule could not be deleted.");
+        }
+
+        SetSuccessMessage("Custom ID rule deleted.");
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReorderCustomIdRules(Guid id, InventoryDetailsPageViewModel model, CancellationToken cancellationToken)
+    {
+        var result = await _inventoryFacade.ReorderCustomIdRulesAsync(id, model.ExistingRuleForms, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return RedirectToInventoryDetailsForFailure(id, result, "Custom ID rule order could not be updated.");
+        }
+
+        SetSuccessMessage("Custom ID rule order updated.");
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateTags(Guid id, InventoryDetailsPageViewModel model, CancellationToken cancellationToken)
+    {
+        var result = await _inventoryFacade.UpdateInventoryTagsAsync(id, model.TagForm.TagIds, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return RedirectToInventoryDetailsForFailure(id, result, "Inventory tags could not be updated.");
+        }
+
+        SetSuccessMessage("Inventory tags updated.");
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateAccess(Guid id, InventoryDetailsPageViewModel model, CancellationToken cancellationToken)
     {
         var result = await _inventoryFacade.UpdateAccessAsync(id, model.AccessForm, cancellationToken);
@@ -302,6 +373,25 @@ public class InventoryController : AppController
         }
 
         SetSuccessMessage("Comment deleted.");
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateComment(Guid id, UpdateCommentCommand command, CancellationToken cancellationToken)
+    {
+        if (!_authenticationFacade.IsSignedIn)
+        {
+            return RedirectToAction("Login", "Account");
+        }
+
+        var result = await _inventoryFacade.UpdateCommentAsync(command.CommentId, command.Content, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return RedirectToInventoryDetailsForFailure(id, result, "Comment could not be updated.");
+        }
+
+        SetSuccessMessage("Comment updated.");
         return RedirectToAction(nameof(Details), new { id });
     }
 

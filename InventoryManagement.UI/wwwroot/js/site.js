@@ -9,8 +9,36 @@ document.addEventListener('DOMContentLoaded', function () {
       toggle.innerHTML = dark ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
     });
   }
+  function syncSortableOrder(container) {
+    if (!container) return;
+    const items = Array.from(container.querySelectorAll('[data-sortable-item]'));
+    const isRuleContainer = container.getAttribute('data-sort-kind') === 'rules';
+
+    items.forEach(function (item, index) {
+      const nextOrder = index + 1;
+      const orderInput = item.querySelector(isRuleContainer ? '.customid-order-input' : 'input[name*=".DisplayOrder"]');
+      if (orderInput) {
+        orderInput.value = String(nextOrder);
+      }
+
+      const badge = item.querySelector('.field-editor-index');
+      if (badge) {
+        badge.textContent = `#${nextOrder}`;
+      }
+    });
+  }
+
   document.querySelectorAll('[data-sortable="true"]').forEach(function (el) {
-    if (window.Sortable) Sortable.create(el, { handle: '.rule-handle, .field-handle', animation: 150 });
+    if (!window.Sortable) return;
+    Sortable.create(el, {
+      handle: '.rule-handle, .field-handle',
+      animation: 150,
+      onEnd: function () {
+        syncSortableOrder(el);
+        updateCustomIdPreview();
+      }
+    });
+    syncSortableOrder(el);
   });
 
   const bulkFieldContainer = document.getElementById('bulkFieldRows');
@@ -437,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	    });
 	  }
 
-	  function initAccessManager() {
+  function initAccessManager() {
 	    if (!accessManager) return;
 
 	    const searchUrl = accessManager.getAttribute('data-search-url');
@@ -630,13 +658,26 @@ document.addEventListener('DOMContentLoaded', function () {
       commentCount.textContent = String(commentList.querySelectorAll('[data-comment-id]').length);
     }
 
+    function ensureEmptyState() {
+      if (!commentList) return;
+      const comments = commentList.querySelectorAll('[data-comment-id]');
+      const existingEmptyState = document.getElementById('inventoryCommentEmptyState');
+      if (comments.length === 0 && !existingEmptyState) {
+        const empty = document.createElement('div');
+        empty.className = 'alert alert-light border mb-0';
+        empty.id = 'inventoryCommentEmptyState';
+        empty.textContent = 'No comments have been posted for this inventory yet.';
+        commentList.appendChild(empty);
+      } else if (comments.length > 0 && existingEmptyState) {
+        existingEmptyState.remove();
+      }
+    }
+
     function appendRealtimeComment(payload) {
       if (!commentList || !payload || !payload.commentId) return;
       if (commentList.querySelector('[data-comment-id="' + payload.commentId + '"]')) return;
 
-      if (emptyState) {
-        emptyState.remove();
-      }
+      ensureEmptyState();
 
       const wrapper = document.createElement('div');
       wrapper.className = 'card border';
@@ -645,12 +686,12 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start gap-3">
             <div>
-              <div class="fw-semibold">${payload.userName || payload.userId || 'User'}</div>
-              <div class="small text-muted">Posted ${formatLocalDate(payload.createdAtUtc)}</div>
+              <div class="fw-semibold" data-comment-author>${payload.userName || payload.userId || 'User'}</div>
+              <div class="small text-muted" data-comment-meta>Posted ${formatLocalDate(payload.createdAtUtc)}</div>
             </div>
             <span class="badge text-bg-info">Live</span>
           </div>
-          <div class="mt-3"></div>
+          <div class="mt-3" data-comment-content></div>
         </div>`;
 
       const contentNode = wrapper.querySelector('.mt-3');
@@ -660,6 +701,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
       commentList.prepend(wrapper);
       updateCommentCount();
+      ensureEmptyState();
+    }
+
+    function updateRealtimeComment(payload) {
+      if (!commentList || !payload || !payload.commentId) return;
+      const comment = commentList.querySelector('[data-comment-id="' + payload.commentId + '"]');
+      if (!comment) return;
+
+      const content = comment.querySelector('[data-comment-content]');
+      const meta = comment.querySelector('[data-comment-meta]');
+      if (content) {
+        content.textContent = payload.content || '';
+      }
+      if (meta) {
+        meta.textContent = `Posted previously - Updated ${formatLocalDate(payload.updatedAtUtc)}`;
+      }
+
+      const editForm = comment.querySelector('[data-comment-edit-form]');
+      const textArea = editForm ? editForm.querySelector('textarea[name="Content"]') : null;
+      if (textArea) {
+        textArea.value = payload.content || '';
+      }
+    }
+
+    function deleteRealtimeComment(payload) {
+      if (!commentList || !payload || !payload.commentId) return;
+      const comment = commentList.querySelector('[data-comment-id="' + payload.commentId + '"]');
+      if (!comment) return;
+      comment.remove();
+      updateCommentCount();
+      ensureEmptyState();
     }
 
     if (inventoryId && hubUrl) {
@@ -670,6 +742,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
       connection.on('ReceiveNewComment', function (payload) {
         appendRealtimeComment(payload);
+      });
+      connection.on('ReceiveUpdatedComment', function (payload) {
+        updateRealtimeComment(payload);
+      });
+      connection.on('ReceiveDeletedComment', function (payload) {
+        deleteRealtimeComment(payload);
       });
 
       connection.start()
@@ -685,4 +763,25 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
   }
+
+  document.addEventListener('click', function (event) {
+    const editToggle = event.target.closest('[data-comment-edit-toggle]');
+    if (editToggle) {
+      const commentId = editToggle.getAttribute('data-comment-id');
+      const form = document.querySelector('[data-comment-edit-form][data-comment-id="' + commentId + '"]');
+      if (form) {
+        form.classList.toggle('d-none');
+      }
+      return;
+    }
+
+    const cancelButton = event.target.closest('[data-comment-edit-cancel]');
+    if (cancelButton) {
+      const commentId = cancelButton.getAttribute('data-comment-id');
+      const form = document.querySelector('[data-comment-edit-form][data-comment-id="' + commentId + '"]');
+      if (form) {
+        form.classList.add('d-none');
+      }
+    }
+  });
 });

@@ -84,6 +84,9 @@ public sealed class AuthenticationFacade : IAuthenticationFacade
         return result;
     }
 
+    public Task<ApiCallResult<List<ActiveSessionDto>>> GetActiveSessionsAsync(CancellationToken cancellationToken = default) =>
+        _backendApiClient.GetAsync<List<ActiveSessionDto>>("Auth/GetActiveSessions", requiresAuth: true, cancellationToken);
+
     public async Task<ApiCallResult<UserDto>> UpdateLanguageAsync(LanguageType language, CancellationToken cancellationToken = default)
     {
         var result = await _backendApiClient.PostAsync<UpdateUserLanguageCommand, UserDto>(
@@ -115,6 +118,13 @@ public sealed class AuthenticationFacade : IAuthenticationFacade
 
         return result;
     }
+
+    public Task<ApiCallResult<int>> RevokeAllRefreshTokensAsync(CancellationToken cancellationToken = default) =>
+        _backendApiClient.PostAsync<RevokeAllRefreshTokensCommand, int>(
+            "Auth/RevokeAllRefreshTokens",
+            new RevokeAllRefreshTokensCommand(),
+            requiresAuth: true,
+            cancellationToken);
 
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {

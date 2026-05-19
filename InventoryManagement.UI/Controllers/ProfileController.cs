@@ -31,13 +31,15 @@ public class ProfileController : AppController
 
         var ownTask = _inventoryFacade.GetOwnInventoriesAsync(userResult.Value.Id, cancellationToken);
         var editableTask = _inventoryFacade.GetEditableInventoriesAsync(userResult.Value.Id, cancellationToken);
-        await Task.WhenAll(ownTask, editableTask);
+        var sessionsTask = _authenticationFacade.GetActiveSessionsAsync(cancellationToken);
+        await Task.WhenAll(ownTask, editableTask, sessionsTask);
 
         var model = new ProfilePageViewModel
         {
             User = userResult.Value,
             PreferredLanguage = userResult.Value.PreferredLanguage,
             PreferredTheme = userResult.Value.PreferredTheme,
+            ActiveSessions = sessionsTask.Result.IsSuccess && sessionsTask.Result.Value is not null ? sessionsTask.Result.Value : [],
             OwnedInventories = ownTask.Result.IsSuccess && ownTask.Result.Value is not null ? ownTask.Result.Value : [],
             WritableInventories = editableTask.Result.IsSuccess && editableTask.Result.Value is not null ? editableTask.Result.Value : [],
             InventoryNote = (!ownTask.Result.IsSuccess || !editableTask.Result.IsSuccess)
@@ -65,6 +67,20 @@ public class ProfileController : AppController
         }
 
         SetSuccessMessage(await TAsync("messages.preferences.saved", "Preferences saved.", "shared", cancellationToken));
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RevokeAllSessions(CancellationToken cancellationToken)
+    {
+        var result = await _authenticationFacade.RevokeAllRefreshTokensAsync(cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return RedirectForFailure(result, fallbackAction: nameof(Index), fallbackController: "Profile");
+        }
+
+        SetSuccessMessage("All active sessions were revoked.");
         return RedirectToAction(nameof(Index));
     }
 }

@@ -111,14 +111,24 @@ public sealed class InventoryCommentViewModel
     public DateTime CreatedAtUtc { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
     public bool CanDelete { get; set; }
+    public bool CanEdit { get; set; }
     public string AuthorLabel { get; set; } = string.Empty;
+}
+
+public sealed class InventoryTagSelectionInputModel
+{
+    public List<Guid> TagIds { get; set; } = new();
 }
 
 public sealed class InventoryDetailsPageViewModel
 {
     public InventoryDto Inventory { get; set; } = new();
+    public GetInventoryStatisticsResult Statistics { get; set; } = new();
     public InventoryUpdateInputModel UpdateForm { get; set; } = new();
     public List<CategoryOptionViewModel> Categories { get; set; } = new();
+    public List<TagDto> AvailableTags { get; set; } = new();
+    public List<TagDto> ExistingTags { get; set; } = new();
+    public InventoryTagSelectionInputModel TagForm { get; set; } = new();
     public List<InventoryAccessListDto> ExistingAccesses { get; set; } = new();
     public List<InventoryItemRowViewModel> ItemRows { get; set; } = new();
     public List<GetInventoryFieldsByInventoryIdResult> ExistingFields { get; set; } = new();

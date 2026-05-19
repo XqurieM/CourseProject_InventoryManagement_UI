@@ -218,6 +218,17 @@ public sealed class InventoryFacade : IInventoryFacade
             requiresAuth: true,
             cancellationToken);
 
+    public Task<ApiCallResult> UpdateCommentAsync(Guid commentId, string content, CancellationToken cancellationToken = default) =>
+        _backendApiClient.PostAsync(
+            "Comment/UpdateComment",
+            new UpdateCommentCommand
+            {
+                CommentId = commentId,
+                Content = content
+            },
+            requiresAuth: true,
+            cancellationToken);
+
     public Task<ApiCallResult> DeleteCommentAsync(Guid commentId, CancellationToken cancellationToken = default) =>
         _backendApiClient.PostAsync(
             $"Comment/DeleteComment?commentId={commentId}",
@@ -260,12 +271,21 @@ public sealed class InventoryFacade : IInventoryFacade
         var fieldsResult = _userSessionService.IsAuthenticated
             ? await GetInventoryFieldsAsync(id, cancellationToken)
             : ApiCallResult<List<GetInventoryFieldsByInventoryIdResult>>.Success(new List<GetInventoryFieldsByInventoryIdResult>());
+        var tagsResult = _userSessionService.IsAuthenticated
+            ? await GetInventoryTagsAsync(id, cancellationToken)
+            : ApiCallResult<List<TagDto>>.Success(new List<TagDto>());
         var rulesResult = _userSessionService.IsAuthenticated
             ? await GetInventoryCustomIdRulesAsync(id, cancellationToken)
             : ApiCallResult<List<GetInventoryCustomIdRulesByInventoryIdResult>>.Success(new List<GetInventoryCustomIdRulesByInventoryIdResult>());
         var accessResult = _userSessionService.IsAuthenticated
             ? await GetInventoryAccessListAsync(id, cancellationToken)
             : ApiCallResult<List<InventoryAccessListDto>>.Success(new List<InventoryAccessListDto>());
+        var statisticsResult = _userSessionService.IsAuthenticated
+            ? await _backendApiClient.GetAsync<GetInventoryStatisticsResult>(
+                $"Inventory/GetInventoryStatistics?inventoryId={id}",
+                requiresAuth: true,
+                cancellationToken)
+            : ApiCallResult<GetInventoryStatisticsResult>.Success(new GetInventoryStatisticsResult());
         var commentsResult = _userSessionService.IsAuthenticated
             ? await _backendApiClient.GetAsync<List<CommentDto>>(
                 $"Comment/GetInventoryComments?inventoryId={id}",
@@ -273,11 +293,17 @@ public sealed class InventoryFacade : IInventoryFacade
                 cancellationToken)
             : ApiCallResult<List<CommentDto>>.Success(new List<CommentDto>());
         var categoriesResult = await GetCreatePageAsync(cancellationToken);
+        var availableTagsResult = _userSessionService.IsAuthenticated
+            ? await GetAllTagsAsync(cancellationToken)
+            : ApiCallResult<List<TagDto>>.Success(new List<TagDto>());
         var currentUser = _userSessionService.GetUser();
 
         return ApiCallResult<InventoryDetailsPageViewModel>.Success(new InventoryDetailsPageViewModel
         {
             Inventory = inventoryResult.Value,
+            Statistics = statisticsResult.IsSuccess && statisticsResult.Value is not null
+                ? statisticsResult.Value
+                : new GetInventoryStatisticsResult(),
             UpdateForm = new InventoryUpdateInputModel
             {
                 Id = inventoryResult.Value.Id,
@@ -291,6 +317,18 @@ public sealed class InventoryFacade : IInventoryFacade
             Categories = categoriesResult.IsSuccess && categoriesResult.Value is not null
                 ? categoriesResult.Value.Categories
                 : [],
+            AvailableTags = availableTagsResult.IsSuccess && availableTagsResult.Value is not null
+                ? availableTagsResult.Value.OrderBy(x => x.Name).ToList()
+                : [],
+            ExistingTags = tagsResult.IsSuccess && tagsResult.Value is not null
+                ? tagsResult.Value.OrderBy(x => x.Name).ToList()
+                : [],
+            TagForm = new InventoryTagSelectionInputModel
+            {
+                TagIds = tagsResult.IsSuccess && tagsResult.Value is not null
+                    ? tagsResult.Value.Select(x => x.Id).ToList()
+                    : []
+            },
             ExistingAccesses = accessResult.IsSuccess && accessResult.Value is not null
                 ? accessResult.Value.OrderBy(x => x.CreatedAtUtc).ToList()
                 : [],
@@ -370,6 +408,7 @@ public sealed class InventoryFacade : IInventoryFacade
                     CreatedAtUtc = x.CreatedAtUtc,
                     UpdatedAtUtc = x.UpdatedAtUtc,
                     CanDelete = inventoryResult.Value.CanManageInventory || currentUser?.Id == x.CreatedByUserId,
+                    CanEdit = inventoryResult.Value.CanManageInventory || currentUser?.Id == x.CreatedByUserId,
                     AuthorLabel = currentUser?.Id == x.CreatedByUserId ? "You" : x.CreatedByUserId.ToString()
                 })
                 .ToList(),
@@ -380,6 +419,12 @@ public sealed class InventoryFacade : IInventoryFacade
     public Task<ApiCallResult<List<GetInventoryFieldsByInventoryIdResult>>> GetInventoryFieldsAsync(Guid inventoryId, CancellationToken cancellationToken = default) =>
         _backendApiClient.GetAsync<List<GetInventoryFieldsByInventoryIdResult>>(
             $"Inventory/GetInventoryFieldsByInventoryId?inventoryId={inventoryId}",
+            requiresAuth: true,
+            cancellationToken);
+
+    public Task<ApiCallResult<List<TagDto>>> GetInventoryTagsAsync(Guid inventoryId, CancellationToken cancellationToken = default) =>
+        _backendApiClient.GetAsync<List<TagDto>>(
+            $"Inventory/GetInventoryTagsByInventoryId?inventoryId={inventoryId}",
             requiresAuth: true,
             cancellationToken);
 
@@ -498,6 +543,45 @@ public sealed class InventoryFacade : IInventoryFacade
         return await _backendApiClient.PostAsync("Inventory/UpdateInventoryFields", command, requiresAuth: true, cancellationToken);
     }
 
+    public Task<ApiCallResult> DeleteFieldAsync(Guid inventoryId, Guid fieldId, CancellationToken cancellationToken = default) =>
+        _backendApiClient.PostAsync(
+            "Inventory/DeleteInventoryField",
+            new DeleteInventoryFieldCommand
+            {
+                InventoryId = inventoryId,
+                FieldId = fieldId
+            },
+            requiresAuth: true,
+            cancellationToken);
+
+    public async Task<ApiCallResult> ReorderFieldsAsync(Guid inventoryId, IReadOnlyCollection<ExistingInventoryFieldInputModel> inputs, CancellationToken cancellationToken = default)
+    {
+        var reordered = inputs
+            .Where(x => x.Id != Guid.Empty)
+            .OrderBy(x => x.DisplayOrder)
+            .Select((x, index) => new ReorderInventoryFieldDto
+            {
+                FieldId = x.Id,
+                DisplayOrder = index + 1
+            })
+            .ToList();
+
+        if (reordered.Count == 0)
+        {
+            return ApiCallResult.Failure(StatusCodes.Status400BadRequest, "There are no fields to reorder.");
+        }
+
+        return await _backendApiClient.PostAsync(
+            "Inventory/ReorderInventoryFields",
+            new ReorderInventoryFieldsCommand
+            {
+                InventoryId = inventoryId,
+                Fields = reordered
+            },
+            requiresAuth: true,
+            cancellationToken);
+    }
+
     public async Task<ApiCallResult> AddCustomIdRulesAsync(Guid inventoryId, IReadOnlyCollection<AddInventoryRuleInputModel> inputs, CancellationToken cancellationToken = default)
     {
         var validInputs = inputs
@@ -554,6 +638,63 @@ public sealed class InventoryFacade : IInventoryFacade
         };
 
         return await _backendApiClient.PostAsync("Inventory/UpdateInventoryCustomIdRules", command, requiresAuth: true, cancellationToken);
+    }
+
+    public Task<ApiCallResult> DeleteCustomIdRuleAsync(Guid inventoryId, Guid ruleId, CancellationToken cancellationToken = default) =>
+        _backendApiClient.PostAsync(
+            "Inventory/DeleteInventoryCustomIdRule",
+            new DeleteInventoryCustomIdRuleCommand
+            {
+                InventoryId = inventoryId,
+                RuleId = ruleId
+            },
+            requiresAuth: true,
+            cancellationToken);
+
+    public async Task<ApiCallResult> ReorderCustomIdRulesAsync(Guid inventoryId, IReadOnlyCollection<ExistingInventoryRuleInputModel> inputs, CancellationToken cancellationToken = default)
+    {
+        var reordered = inputs
+            .Where(x => x.Id != Guid.Empty)
+            .OrderBy(x => x.PartOrder)
+            .Select((x, index) => new ReorderInventoryCustomIdRuleDto
+            {
+                RuleId = x.Id,
+                PartOrder = index + 1
+            })
+            .ToList();
+
+        if (reordered.Count == 0)
+        {
+            return ApiCallResult.Failure(StatusCodes.Status400BadRequest, "There are no custom ID rules to reorder.");
+        }
+
+        return await _backendApiClient.PostAsync(
+            "Inventory/ReorderInventoryCustomIdRules",
+            new ReorderInventoryCustomIdRulesCommand
+            {
+                InventoryId = inventoryId,
+                Rules = reordered
+            },
+            requiresAuth: true,
+            cancellationToken);
+    }
+
+    public async Task<ApiCallResult> UpdateInventoryTagsAsync(Guid inventoryId, IReadOnlyCollection<Guid> tagIds, CancellationToken cancellationToken = default)
+    {
+        var distinctTagIds = tagIds
+            .Where(x => x != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        return await _backendApiClient.PostAsync(
+            "Inventory/UpdateInventoryTags",
+            new UpdateInventoryTagsCommand
+            {
+                InventoryId = inventoryId,
+                TagIds = distinctTagIds
+            },
+            requiresAuth: true,
+            cancellationToken);
     }
 
     public async Task<ApiCallResult> UpdateAccessAsync(Guid inventoryId, UpdateInventoryAccessInputModel input, CancellationToken cancellationToken = default)
@@ -764,13 +905,13 @@ public sealed class InventoryFacade : IInventoryFacade
 
     public async Task<ApiCallResult> SaveItemFieldValuesAsync(Guid itemId, IReadOnlyCollection<ItemFieldValueInputModel> fields, CancellationToken cancellationToken = default)
     {
-        var command = new AddItemFieldValuesCommand
+        var command = new UpdateItemFieldValuesCommand
         {
             ItemId = itemId,
             Values = fields.Select(MapFieldValue).ToList()
         };
 
-        return await _backendApiClient.PostAsync("Item/AddItemFieldValues", command, requiresAuth: true, cancellationToken);
+        return await _backendApiClient.PostAsync("Item/UpdateItemFieldValues", command, requiresAuth: true, cancellationToken);
     }
 
     public async Task<ApiCallResult> SaveBatchItemFieldValuesAsync(BatchItemEditPageViewModel model, CancellationToken cancellationToken = default)

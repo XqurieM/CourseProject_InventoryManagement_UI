@@ -14,7 +14,9 @@ public interface IAuthenticationFacade
     Task<ApiCallResult<UserDto>> ExternalMicrosoftLoginAsync(string idToken, CancellationToken cancellationToken = default);
     Task<ApiCallResult<UserDto>> RegisterAsync(RegisterUserCommand command, CancellationToken cancellationToken = default);
     Task<ApiCallResult<UserDto>> GetCurrentUserAsync(CancellationToken cancellationToken = default);
+    Task<ApiCallResult<List<ActiveSessionDto>>> GetActiveSessionsAsync(CancellationToken cancellationToken = default);
     Task<ApiCallResult<UserDto>> UpdateLanguageAsync(LanguageType language, CancellationToken cancellationToken = default);
     Task<ApiCallResult<UserDto>> UpdateThemeAsync(ThemeType theme, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<int>> RevokeAllRefreshTokensAsync(CancellationToken cancellationToken = default);
     Task LogoutAsync(CancellationToken cancellationToken = default);
 }

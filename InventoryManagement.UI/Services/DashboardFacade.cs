@@ -31,7 +31,7 @@ public sealed class DashboardFacade : IDashboardFacade
             requiresAuth: true,
             cancellationToken);
         var tagsTask = _backendApiClient.GetAsync<List<TagDto>>(
-            "Tag/GetAllTags",
+            "Tag/GetPopularTags?take=12",
             requiresAuth: true,
             cancellationToken);
 
@@ -68,6 +68,7 @@ public sealed class DashboardFacade : IDashboardFacade
             Statistics = statsTask.Result.Value ?? new GetDashboardStatisticsResult(),
             LatestInventories = latest,
             PopularInventories = popular,
+            UsedPopularTagsService = tagsTask.Result.IsSuccess,
             Tags = tags.Count > 0
                 ? tags
                 : latest.Concat(popular)
