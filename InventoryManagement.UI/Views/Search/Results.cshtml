@@ -119,9 +119,21 @@ else
                             {
                                 <tr>
                                     <td>
-                                        <a asp-controller="Item" asp-action="Details" asp-route-id="@item.Id" asp-route-inventoryId="@item.InventoryId" class="fw-semibold text-decoration-none">
-                                            @item.ItemName
-                                        </a>
+                                        <div class="d-flex align-items-center gap-3 py-1">
+                                            @if (!string.IsNullOrWhiteSpace(item.PrimaryImageUrl))
+                                            {
+                                                <img src="@item.PrimaryImageUrl" alt="@item.ItemName" class="inventory-thumb inventory-thumb-sm rounded border flex-shrink-0" />
+                                            }
+                                            else
+                                            {
+                                                <div class="inventory-thumb inventory-thumb-sm rounded border bg-light text-muted d-flex align-items-center justify-content-center flex-shrink-0">
+                                                    <i class="fa-solid fa-image"></i>
+                                                </div>
+                                            }
+                                            <a asp-controller="Item" asp-action="Details" asp-route-id="@item.Id" asp-route-inventoryId="@item.InventoryId" class="fw-semibold text-decoration-none">
+                                                @item.ItemName
+                                            </a>
+                                        </div>
                                     </td>
                                     <td><code>@item.CustomId</code></td>
                                     <td>

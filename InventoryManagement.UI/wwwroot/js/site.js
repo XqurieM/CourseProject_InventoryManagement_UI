@@ -28,6 +28,27 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  function setAutosaveStatus(form, state, message) {
+    if (!form) return;
+    const status = form.querySelector('[data-autosave-status]');
+    if (!status) return;
+
+    status.classList.remove('is-saving', 'is-saved', 'is-error');
+    status.textContent = message || '';
+
+    if (state) {
+      status.classList.add(`is-${state}`);
+    }
+  }
+
+  function dispatchAutosave(form, detail) {
+    if (!form) return;
+    form.dispatchEvent(new CustomEvent('autosave:trigger', {
+      bubbles: true,
+      detail: detail || {}
+    }));
+  }
+
   document.querySelectorAll('[data-sortable="true"]').forEach(function (el) {
     if (!window.Sortable) return;
     Sortable.create(el, {
@@ -36,6 +57,10 @@ document.addEventListener('DOMContentLoaded', function () {
       onEnd: function () {
         syncSortableOrder(el);
         updateCustomIdPreview();
+        const form = el.closest('form[data-autosave-form]');
+        if (form && form.dataset.reorderUrl) {
+          dispatchAutosave(form, { immediate: true, actionUrl: form.dataset.reorderUrl });
+        }
       }
     });
     syncSortableOrder(el);
@@ -57,6 +82,129 @@ document.addEventListener('DOMContentLoaded', function () {
 	  const inventoryPreviewPlaceholder = document.getElementById('inventoryCreatePreviewPlaceholder');
 	  const accessManager = document.querySelector('[data-access-manager]');
 	  let activeCustomIdRow = null;
+
+  function initAutosaveForms() {
+    document.querySelectorAll('form[data-autosave-form]').forEach(function (form) {
+      const label = form.dataset.autosaveLabel || 'Changes';
+      const delay = Number(form.dataset.autosaveDelay || '900');
+      const state = {
+        timer: null,
+        inFlight: false,
+        pending: null
+      };
+
+      function schedule(options) {
+        const config = Object.assign({ immediate: false }, options || {});
+        window.clearTimeout(state.timer);
+
+        const run = function () {
+          submit(config);
+        };
+
+        if (config.immediate) {
+          run();
+        } else {
+          state.timer = window.setTimeout(run, delay);
+        }
+      }
+
+      async function submit(options) {
+        const config = Object.assign({ actionUrl: form.getAttribute('action') || window.location.href }, options || {});
+        if (state.inFlight) {
+          state.pending = config;
+          return;
+        }
+
+        state.inFlight = true;
+        setAutosaveStatus(form, 'saving', `${label} saving...`);
+
+        try {
+          const response = await fetch(config.actionUrl, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+          });
+
+          if (response.redirected) {
+            window.location.href = response.url;
+            return;
+          }
+
+          const contentType = response.headers.get('content-type') || '';
+          const payload = contentType.includes('application/json')
+            ? await response.json()
+            : null;
+
+          if (!response.ok || !payload || payload.success === false) {
+            const message = payload && payload.message
+              ? payload.message
+              : `${label} could not be saved.`;
+            setAutosaveStatus(form, 'error', message);
+            return;
+          }
+
+          if (payload.rowVersion) {
+            const rowVersionInput = form.querySelector('input[name="UpdateForm.RowVersion"]');
+            if (rowVersionInput) {
+              rowVersionInput.value = payload.rowVersion;
+            }
+          }
+
+          if (payload.imageUrl) {
+            const imageUrlInput = form.querySelector('#inventoryImageUrlInput');
+            if (imageUrlInput) {
+              imageUrlInput.value = payload.imageUrl;
+            }
+            if (inventoryImageFileInput) {
+              inventoryImageFileInput.value = '';
+            }
+            setInventoryPreview(payload.imageUrl);
+          }
+
+          if (typeof payload.count === 'number') {
+            const tagCount = form.querySelector('[data-tag-selection-count]');
+            if (tagCount) {
+              tagCount.textContent = `${payload.count} selected`;
+            }
+          }
+
+          setAutosaveStatus(form, 'saved', payload.message || `${label} saved.`);
+        } catch (_error) {
+          setAutosaveStatus(form, 'error', `${label} could not be saved.`);
+        } finally {
+          state.inFlight = false;
+          if (state.pending) {
+            const pending = state.pending;
+            state.pending = null;
+            schedule(Object.assign({}, pending, { immediate: true }));
+          }
+        }
+      }
+
+      form.addEventListener('input', function (event) {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (target.matches('input[type="file"], input[type="hidden"]')) return;
+        schedule();
+      });
+
+      form.addEventListener('change', function (event) {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (target.matches('input[type="hidden"]')) return;
+        schedule({ immediate: target.matches('input[type="file"], input[type="radio"], input[type="checkbox"], select') });
+      });
+
+      form.addEventListener('autosave:trigger', function (event) {
+        schedule(event.detail || {});
+      });
+
+      form.addEventListener('submit', function () {
+        window.clearTimeout(state.timer);
+      });
+    });
+  }
 
   function reindexBulkFieldRows() {
     if (!bulkFieldContainer) return;
@@ -242,13 +390,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function getExistingCustomIdRows() {
+    return Array.from(document.querySelectorAll('[data-customid-static-row]'));
+  }
+
   function getCustomIdRows() {
     if (!bulkCustomIdContainer) return [];
     return Array.from(bulkCustomIdContainer.querySelectorAll('.bulk-customid-row'));
   }
 
   function getAllCustomIdRows() {
-    return existingCustomIdRows.concat(getCustomIdRows());
+    return getExistingCustomIdRows().concat(getCustomIdRows());
   }
 
   function syncCustomIdRowState(row) {
@@ -423,7 +575,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
     if (!activeCustomIdRow) {
-      activeCustomIdRow = existingCustomIdRows[0];
+      activeCustomIdRow = getExistingCustomIdRows()[0];
     }
     updateCustomIdPreview();
   }
@@ -524,6 +676,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        <input type="hidden" name="AccessForm.UserIds" value="${user.id}" />`;
 	      selectedList.appendChild(item);
 	      syncEmptyState();
+	      dispatchAutosave(accessManager.closest('form[data-autosave-form]'), { immediate: true });
 	    }
 
 	    function renderResults(users) {
@@ -611,6 +764,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	      syncEmptyState();
 	      syncExistingAccessSummary();
+	      dispatchAutosave(accessManager.closest('form[data-autosave-form]'), { immediate: true });
 	    }
 
 	    selectedList.addEventListener('click', function (event) {
@@ -638,6 +792,193 @@ document.addEventListener('DOMContentLoaded', function () {
 	  }
 
 	  initAccessManager();
+  initAutosaveForms();
+
+  function initItemImageManager() {
+    const list = document.querySelector('[data-item-image-list]');
+    const template = document.getElementById('itemImageCardTemplate');
+    const addUrlButton = document.getElementById('itemImageUrlAddButton');
+    const urlInput = document.getElementById('itemImageUrlInput');
+    const emptyState = document.getElementById('itemImageEmptyState');
+    const countBadge = document.querySelector('[data-item-image-count]');
+
+    if (!list || !template) {
+      return;
+    }
+
+    function getCards() {
+      return Array.from(list.querySelectorAll('[data-item-image-card]'));
+    }
+
+    function syncEmptyState() {
+      const count = getCards().length;
+      if (emptyState) {
+        emptyState.style.display = count === 0 ? 'block' : 'none';
+      }
+      if (countBadge) {
+        countBadge.textContent = `${count} photo(s)`;
+      }
+    }
+
+    function syncPrimaryState() {
+      const cards = getCards();
+      let checkedRadio = cards.map(card => card.querySelector('[data-item-image-primary]')).find(radio => radio && radio.checked);
+
+      if (!checkedRadio && cards.length > 0) {
+        checkedRadio = cards[0].querySelector('[data-item-image-primary]');
+        if (checkedRadio) {
+          checkedRadio.checked = true;
+        }
+      }
+
+      cards.forEach(function (card, index) {
+        const primaryHidden = card.querySelector('[data-item-image-field="isPrimary"]');
+        const radio = card.querySelector('[data-item-image-primary]');
+        if (radio) {
+          radio.value = String(index);
+        }
+        if (primaryHidden) {
+          primaryHidden.value = radio && radio.checked ? 'true' : 'false';
+        }
+      });
+    }
+
+    function reindexCards() {
+      const cards = getCards();
+      cards.forEach(function (card, index) {
+        const displayOrder = index + 1;
+        const urlHidden = card.querySelector('[data-item-image-field="url"]');
+        const captionInput = card.querySelector('input[name*=".Caption"]');
+        const orderHidden = card.querySelector('[data-item-image-field="displayOrder"]');
+        const primaryHidden = card.querySelector('[data-item-image-field="isPrimary"]');
+
+        if (urlHidden) {
+          urlHidden.name = `Images[${index}].ImageUrl`;
+        }
+        if (captionInput) {
+          captionInput.name = `Images[${index}].Caption`;
+        }
+        if (orderHidden) {
+          orderHidden.name = `Images[${index}].DisplayOrder`;
+          orderHidden.value = String(displayOrder);
+        }
+        if (primaryHidden) {
+          primaryHidden.name = `Images[${index}].IsPrimary`;
+        }
+      });
+
+      syncPrimaryState();
+      syncEmptyState();
+    }
+
+    function createCard(url) {
+      const nextIndex = getCards().length;
+      const displayOrder = nextIndex + 1;
+      const html = template.innerHTML
+        .replaceAll('__index__', String(nextIndex))
+        .replaceAll('__displayOrder__', String(displayOrder))
+        .replaceAll('__url__', url);
+
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = html.trim();
+      const card = wrapper.firstElementChild;
+      if (!card) {
+        return null;
+      }
+
+      list.appendChild(card);
+      reindexCards();
+      return card;
+    }
+
+    function addUrlCard() {
+      if (!urlInput) return;
+      const value = urlInput.value.trim();
+      if (!value) return;
+      const existing = getCards()
+        .map(card => card.querySelector('[data-item-image-field="url"]'))
+        .filter(Boolean)
+        .some(input => (input.value || '').trim().toLowerCase() === value.toLowerCase());
+      if (existing) {
+        urlInput.value = '';
+        return;
+      }
+      createCard(value);
+      urlInput.value = '';
+    }
+
+    if (addUrlButton) {
+      addUrlButton.addEventListener('click', addUrlCard);
+    }
+
+    if (urlInput) {
+      urlInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          addUrlCard();
+        }
+      });
+    }
+
+    list.addEventListener('click', function (event) {
+      const removeButton = event.target.closest('[data-item-image-remove]');
+      if (removeButton) {
+        const card = removeButton.closest('[data-item-image-card]');
+        if (card) {
+          card.remove();
+          reindexCards();
+        }
+        return;
+      }
+
+      const moveUpButton = event.target.closest('[data-item-image-move-up]');
+      if (moveUpButton) {
+        const card = moveUpButton.closest('[data-item-image-card]');
+        if (card && card.previousElementSibling) {
+          list.insertBefore(card, card.previousElementSibling);
+          reindexCards();
+        }
+        return;
+      }
+
+      const moveDownButton = event.target.closest('[data-item-image-move-down]');
+      if (moveDownButton) {
+        const card = moveDownButton.closest('[data-item-image-card]');
+        if (card && card.nextElementSibling) {
+          list.insertBefore(card.nextElementSibling, card);
+          reindexCards();
+        }
+      }
+    });
+
+    list.addEventListener('change', function (event) {
+      const radio = event.target.closest('[data-item-image-primary]');
+      if (radio) {
+        syncPrimaryState();
+      }
+    });
+
+    list.addEventListener('input', function (event) {
+      const urlField = event.target.closest('[data-item-image-url-input]');
+      if (!urlField) return;
+
+      const card = urlField.closest('[data-item-image-card]');
+      if (!card) return;
+
+      const hiddenUrl = card.querySelector('[data-item-image-field="url"]');
+      const preview = card.querySelector('[data-item-image-preview]');
+      if (hiddenUrl) {
+        hiddenUrl.value = urlField.value.trim();
+      }
+      if (preview) {
+        preview.src = urlField.value.trim();
+      }
+    });
+
+    reindexCards();
+  }
+
+  initItemImageManager();
 
 	  const discussionRoot = document.getElementById('inventoryDiscussionRoot');
   if (discussionRoot && window.signalR) {

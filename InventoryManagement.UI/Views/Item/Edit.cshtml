@@ -21,7 +21,7 @@
                 {
                     <div class="alert alert-light border">@Model.HelperText</div>
                 }
-                <form asp-action="Edit" method="post">
+                <form asp-action="Edit" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
                     <input asp-for="InventoryId" type="hidden" />
                     <input asp-for="InventoryTitle" type="hidden" />
@@ -37,6 +37,122 @@
                         <div class="col-md-5">
                             <label class="form-label fw-semibold">Custom ID</label>
                             <input asp-for="CustomId" class="form-control form-control-lg" />
+                        </div>
+                    </div>
+                    <div class="card border-0 bg-light-subtle mb-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6 class="mb-1">Item photos</h6>
+                                    <div class="small text-muted">Add multiple photos, choose one cover image, and arrange the order you want to show.</div>
+                                </div>
+                                <span class="badge text-bg-primary" data-item-image-count>@Model.Images.Count photo(s)</span>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-lg-7">
+                                    <label class="form-label">Add image by URL</label>
+                                    <div class="input-group">
+                                        <input type="url" class="form-control" id="itemImageUrlInput" placeholder="https://..." />
+                                        <button class="btn btn-outline-primary" type="button" id="itemImageUrlAddButton">
+                                            <i class="fa-solid fa-plus me-1"></i>Add
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-lg-5">
+                                    <label asp-for="UploadedImages" class="form-label">Upload photos</label>
+                                    <input asp-for="UploadedImages" class="form-control" type="file" accept="image/*" multiple />
+                                </div>
+                            </div>
+                            <div id="itemImageList" class="d-grid gap-3" data-item-image-list>
+                                @for (var i = 0; i < Model.Images.Count; i++)
+                                {
+                                    <div class="item-image-card" data-item-image-card>
+                                        <input type="hidden" name="Images[@i].ImageUrl" value="@Model.Images[i].ImageUrl" data-item-image-field="url" />
+                                        <input type="hidden" name="Images[@i].DisplayOrder" value="@Model.Images[i].DisplayOrder" data-item-image-field="displayOrder" />
+                                        <input type="hidden" name="Images[@i].IsPrimary" value="@(Model.Images[i].IsPrimary ? "true" : "false")" data-item-image-field="isPrimary" />
+                                        <div class="d-flex flex-column flex-lg-row gap-3">
+                                            <div class="item-image-thumb-wrap">
+                                                <img src="@Model.Images[i].ImageUrl" alt="Item image" class="item-image-thumb" data-item-image-preview />
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="row g-2">
+                                                    <div class="col-12">
+                                                        <label class="form-label small text-muted mb-1">Image URL</label>
+                                                        <input type="url" class="form-control" value="@Model.Images[i].ImageUrl" data-item-image-url-input />
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <label class="form-label small text-muted mb-1">Caption</label>
+                                                        <input type="text" class="form-control" name="Images[@i].Caption" value="@Model.Images[i].Caption" placeholder="Optional caption" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small text-muted mb-1 d-block">Cover image</label>
+                                                        <div class="form-check mt-2">
+                                                            <input class="form-check-input" type="radio" name="itemImagePrimarySelection" value="@i" @(Model.Images[i].IsPrimary ? "checked" : null) data-item-image-primary />
+                                                            <label class="form-check-label">Use as cover</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex d-lg-grid gap-2 align-self-start">
+                                                <button class="btn btn-outline-secondary btn-sm" type="button" data-item-image-move-up>
+                                                    <i class="fa-solid fa-arrow-up"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary btn-sm" type="button" data-item-image-move-down>
+                                                    <i class="fa-solid fa-arrow-down"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger btn-sm" type="button" data-item-image-remove>
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="alert alert-light border mb-0 mt-3 small" id="itemImageEmptyState" style="display:@(Model.Images.Count == 0 ? "block" : "none")">
+                                No photos added yet. The first photo you add becomes the cover image by default.
+                            </div>
+                            <template id="itemImageCardTemplate">
+                                <div class="item-image-card" data-item-image-card>
+                                    <input type="hidden" name="Images[__index__].ImageUrl" value="__url__" data-item-image-field="url" />
+                                    <input type="hidden" name="Images[__index__].DisplayOrder" value="__displayOrder__" data-item-image-field="displayOrder" />
+                                    <input type="hidden" name="Images[__index__].IsPrimary" value="false" data-item-image-field="isPrimary" />
+                                    <div class="d-flex flex-column flex-lg-row gap-3">
+                                        <div class="item-image-thumb-wrap">
+                                            <img src="__url__" alt="Item image" class="item-image-thumb" data-item-image-preview />
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="row g-2">
+                                                <div class="col-12">
+                                                    <label class="form-label small text-muted mb-1">Image URL</label>
+                                                    <input type="url" class="form-control" value="__url__" data-item-image-url-input />
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label small text-muted mb-1">Caption</label>
+                                                    <input type="text" class="form-control" name="Images[__index__].Caption" placeholder="Optional caption" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label small text-muted mb-1 d-block">Cover image</label>
+                                                    <div class="form-check mt-2">
+                                                        <input class="form-check-input" type="radio" name="itemImagePrimarySelection" value="__index__" data-item-image-primary />
+                                                        <label class="form-check-label">Use as cover</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex d-lg-grid gap-2 align-self-start">
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" data-item-image-move-up>
+                                                <i class="fa-solid fa-arrow-up"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" data-item-image-move-down>
+                                                <i class="fa-solid fa-arrow-down"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" type="button" data-item-image-remove>
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                     <div class="d-grid gap-3">
@@ -82,11 +198,19 @@
         <div class="card">
             <div class="card-header"><h5 class="mb-0">@Html.T("summary.title", "Item summary")</h5></div>
             <div class="card-body">
+                @if (Model.Images.Count > 0)
+                {
+                    <img src="@Model.Images.OrderByDescending(x => x.IsPrimary).ThenBy(x => x.DisplayOrder).First().ImageUrl"
+                         alt="@Model.Item.ItemName"
+                         class="img-fluid rounded border mb-3 item-cover-preview" />
+                }
                 <dl class="row mb-0">
                     <dt class="col-sm-5">@Html.T("summary.name", "Name")</dt>
                     <dd class="col-sm-7">@Model.Item.ItemName</dd>
                     <dt class="col-sm-5">@Html.T("summary.customId", "Custom ID")</dt>
                     <dd class="col-sm-7"><code>@Model.Item.CustomId</code></dd>
+                    <dt class="col-sm-5">Photo count</dt>
+                    <dd class="col-sm-7">@Model.Images.Count</dd>
                     <dt class="col-sm-5">@Html.T("summary.fieldCount", "Field count")</dt>
                     <dd class="col-sm-7">@Model.Fields.Count</dd>
                 </dl>

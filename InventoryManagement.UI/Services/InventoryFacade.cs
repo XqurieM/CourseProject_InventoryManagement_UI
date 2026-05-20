@@ -61,6 +61,7 @@ public sealed class InventoryFacade : IInventoryFacade
             .Concat(popularResult.Value ?? [])
             .GroupBy(x => x.Id)
             .Select(x => x.First())
+            .Select(NormalizeInventorySummary)
             .ToList();
 
         if (!string.IsNullOrWhiteSpace(query))
@@ -123,7 +124,7 @@ public sealed class InventoryFacade : IInventoryFacade
             SelectedTagId = tagId,
             SelectedTagName = tagName,
             Sort = "newest",
-            Inventories = result.Value ?? [],
+            Inventories = (result.Value ?? []).Select(NormalizeInventorySummary).ToList(),
             CategoryNames = (categoriesResult.Value ?? [])
                 .Select(x => x.Name)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -256,6 +257,9 @@ public sealed class InventoryFacade : IInventoryFacade
             cancellationToken);
     }
 
+    public Task<ApiCallResult<UploadedFileResultDto>> UploadItemImageAsync(IFormFile file, CancellationToken cancellationToken = default) =>
+        UploadInventoryImageAsync(file, cancellationToken);
+
     public async Task<ApiCallResult<InventoryDetailsPageViewModel>> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var inventoryResult = await _backendApiClient.GetAsync<InventoryDto>(
@@ -297,6 +301,7 @@ public sealed class InventoryFacade : IInventoryFacade
             ? await GetAllTagsAsync(cancellationToken)
             : ApiCallResult<List<TagDto>>.Success(new List<TagDto>());
         var currentUser = _userSessionService.GetUser();
+        inventoryResult.Value.ImageUrl = NormalizeUrl(inventoryResult.Value.ImageUrl);
 
         return ApiCallResult<InventoryDetailsPageViewModel>.Success(new InventoryDetailsPageViewModel
         {
@@ -409,7 +414,11 @@ public sealed class InventoryFacade : IInventoryFacade
                     UpdatedAtUtc = x.UpdatedAtUtc,
                     CanDelete = inventoryResult.Value.CanManageInventory || currentUser?.Id == x.CreatedByUserId,
                     CanEdit = inventoryResult.Value.CanManageInventory || currentUser?.Id == x.CreatedByUserId,
-                    AuthorLabel = currentUser?.Id == x.CreatedByUserId ? "You" : x.CreatedByUserId.ToString()
+                    AuthorLabel = currentUser?.Id == x.CreatedByUserId
+                        ? "You"
+                        : !string.IsNullOrWhiteSpace(x.CreatedByUserName)
+                            ? x.CreatedByUserName
+                            : x.CreatedByUserId.ToString()
                 })
                 .ToList(),
             FieldValuesHelperText = "Item field values are matched with inventory field definitions, so names, order and table visibility now come from the backend."
@@ -760,12 +769,22 @@ public sealed class InventoryFacade : IInventoryFacade
             InventoryId = inventoryId,
             InventoryTitle = detailsResult.Value.InventoryTitle,
             CanWriteItems = detailsResult.Value.CanWriteItems,
-            Item = detailsResult.Value.Item,
+            Item = NormalizeItem(detailsResult.Value.Item),
             ItemName = detailsResult.Value.Item.ItemName,
             CustomId = detailsResult.Value.Item.CustomId,
             RowVersion = detailsResult.Value.Item.RowVersion,
+            Images = detailsResult.Value.Images
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => new ItemImageInputModel
+                {
+                    ImageUrl = NormalizeUrl(x.ImageUrl),
+                    Caption = x.Caption,
+                    DisplayOrder = x.DisplayOrder,
+                    IsPrimary = x.IsPrimary
+                })
+                .ToList(),
             Fields = BuildEditableFieldInputs(fieldsResult.Value, fieldValuesById),
-            HelperText = "This screen updates item name, custom ID and field values together."
+            HelperText = "This screen updates item name, custom ID, images and field values together."
         });
     }
 
@@ -846,7 +865,17 @@ public sealed class InventoryFacade : IInventoryFacade
             InventoryId = inventoryId,
             InventoryTitle = inventoryResult.Value.Inventory.Title,
             CanWriteItems = inventoryResult.Value.Inventory.CanWriteItems,
-            Item = itemResult.Value,
+            Item = NormalizeItem(itemResult.Value),
+            Images = (itemResult.Value.Images ?? [])
+                .OrderBy(x => x.DisplayOrder)
+                .Select(x => new ItemImageInputModel
+                {
+                    ImageUrl = NormalizeUrl(x.ImageUrl),
+                    Caption = x.Caption,
+                    DisplayOrder = x.DisplayOrder,
+                    IsPrimary = x.IsPrimary
+                })
+                .ToList(),
             FieldValues = BuildFieldValueDisplays(fieldValuesResult.Value ?? [], fieldsResult.Value ?? []),
             HelperText = "Field names, order and descriptions come from the inventory field definitions. Values are matched by InventoryFieldId."
         });
@@ -902,6 +931,27 @@ public sealed class InventoryFacade : IInventoryFacade
             new DeleteItemCommand { Id = itemId },
             requiresAuth: true,
             cancellationToken);
+
+    public async Task<ApiCallResult> SaveItemImagesAsync(Guid itemId, IReadOnlyCollection<ItemImageInputModel> images, CancellationToken cancellationToken = default)
+    {
+        var command = new UpdateItemImagesCommand
+        {
+            ItemId = itemId,
+            Images = images
+                .Where(x => !string.IsNullOrWhiteSpace(x.ImageUrl))
+                .OrderBy(x => x.DisplayOrder)
+                .Select((x, index) => new UpdateItemImageDto
+                {
+                    ImageUrl = NormalizeUrl(x.ImageUrl.Trim()),
+                    Caption = string.IsNullOrWhiteSpace(x.Caption) ? null : x.Caption.Trim(),
+                    DisplayOrder = index + 1,
+                    IsPrimary = x.IsPrimary
+                })
+                .ToList()
+        };
+
+        return await _backendApiClient.PostAsync("Item/UpdateItemImages", command, requiresAuth: true, cancellationToken);
+    }
 
     public async Task<ApiCallResult> SaveItemFieldValuesAsync(Guid itemId, IReadOnlyCollection<ItemFieldValueInputModel> fields, CancellationToken cancellationToken = default)
     {
@@ -1014,6 +1064,7 @@ public sealed class InventoryFacade : IInventoryFacade
                     .ToList());
 
         return itemsResult.Value
+            .Select(NormalizeItem)
             .Select(item => new InventoryItemRowViewModel
             {
                 Item = item,
@@ -1053,6 +1104,53 @@ public sealed class InventoryFacade : IInventoryFacade
         byId.TryGetValue(inventoryFieldId, out var field)
             ? field
             : null;
+
+    private static GetInventoriesWithJoinInfosResult NormalizeInventorySummary(GetInventoriesWithJoinInfosResult inventory)
+    {
+        inventory.ImageUrl = NormalizeUrl(inventory.ImageUrl);
+        return inventory;
+    }
+
+    private static ItemDto NormalizeItem(ItemDto item)
+    {
+        item.PrimaryImageUrl = NormalizeUrl(item.PrimaryImageUrl);
+
+        if (item.Images is not null)
+        {
+            foreach (var image in item.Images)
+            {
+                image.ImageUrl = NormalizeUrl(image.ImageUrl);
+            }
+        }
+
+        return item;
+    }
+
+    private static string NormalizeUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return string.Empty;
+        }
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            return url;
+        }
+
+        if (uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) && !uri.IsLoopback)
+        {
+            var builder = new UriBuilder(uri)
+            {
+                Scheme = Uri.UriSchemeHttps,
+                Port = uri.Port == 80 ? -1 : uri.Port
+            };
+
+            return builder.Uri.ToString();
+        }
+
+        return uri.ToString();
+    }
 
     private static string FormatFieldValue(ItemFieldValuesResult value)
     {

@@ -131,7 +131,12 @@ public class InventoryController : AppController
         var result = await _inventoryFacade.UpdateFieldsAsync(id, model.ExistingFieldForms, cancellationToken);
         if (!result.IsSuccess)
         {
-            return RedirectToInventoryDetailsForFailure(id, result, "Existing field definitions could not be updated.");
+            return BuildInventoryDetailsFailureResponse(id, result, "Existing field definitions could not be updated.");
+        }
+
+        if (IsAjaxRequest())
+        {
+            return Ok(new { success = true, message = "Field definitions autosaved." });
         }
 
         SetSuccessMessage("Existing field definitions updated.");
@@ -159,7 +164,12 @@ public class InventoryController : AppController
         var result = await _inventoryFacade.ReorderFieldsAsync(id, model.ExistingFieldForms, cancellationToken);
         if (!result.IsSuccess)
         {
-            return RedirectToInventoryDetailsForFailure(id, result, "Field order could not be updated.");
+            return BuildInventoryDetailsFailureResponse(id, result, "Field order could not be updated.");
+        }
+
+        if (IsAjaxRequest())
+        {
+            return Ok(new { success = true, message = "Field order autosaved." });
         }
 
         SetSuccessMessage("Field order updated.");
@@ -203,7 +213,23 @@ public class InventoryController : AppController
         var result = await _inventoryFacade.UpdateInventoryAsync(model.UpdateForm, cancellationToken);
         if (!result.IsSuccess)
         {
-            return RedirectToInventoryDetailsForFailure(id, result, "Inventory settings could not be updated.");
+            return BuildInventoryDetailsFailureResponse(id, result, "Inventory settings could not be updated.");
+        }
+
+        if (IsAjaxRequest())
+        {
+            var refreshedResult = await _inventoryFacade.GetDetailsAsync(id, cancellationToken);
+            var refreshedModel = refreshedResult.IsSuccess ? refreshedResult.Value : null;
+
+            return Ok(new
+            {
+                success = true,
+                message = "Inventory settings autosaved.",
+                rowVersion = refreshedModel is not null && refreshedModel.UpdateForm.RowVersion.Length > 0
+                    ? Convert.ToBase64String(refreshedModel.UpdateForm.RowVersion)
+                    : null,
+                imageUrl = refreshedModel?.UpdateForm.ImageUrl
+            });
         }
 
         SetSuccessMessage("Inventory settings updated.");
@@ -250,7 +276,12 @@ public class InventoryController : AppController
         var result = await _inventoryFacade.UpdateCustomIdRulesAsync(id, model.ExistingRuleForms, cancellationToken);
         if (!result.IsSuccess)
         {
-            return RedirectToInventoryDetailsForFailure(id, result, "Existing custom ID rules could not be updated.");
+            return BuildInventoryDetailsFailureResponse(id, result, "Existing custom ID rules could not be updated.");
+        }
+
+        if (IsAjaxRequest())
+        {
+            return Ok(new { success = true, message = "Custom ID rules autosaved." });
         }
 
         SetSuccessMessage("Existing custom ID rules updated.");
@@ -278,7 +309,12 @@ public class InventoryController : AppController
         var result = await _inventoryFacade.ReorderCustomIdRulesAsync(id, model.ExistingRuleForms, cancellationToken);
         if (!result.IsSuccess)
         {
-            return RedirectToInventoryDetailsForFailure(id, result, "Custom ID rule order could not be updated.");
+            return BuildInventoryDetailsFailureResponse(id, result, "Custom ID rule order could not be updated.");
+        }
+
+        if (IsAjaxRequest())
+        {
+            return Ok(new { success = true, message = "Custom ID rule order autosaved." });
         }
 
         SetSuccessMessage("Custom ID rule order updated.");
@@ -292,7 +328,17 @@ public class InventoryController : AppController
         var result = await _inventoryFacade.UpdateInventoryTagsAsync(id, model.TagForm.TagIds, cancellationToken);
         if (!result.IsSuccess)
         {
-            return RedirectToInventoryDetailsForFailure(id, result, "Inventory tags could not be updated.");
+            return BuildInventoryDetailsFailureResponse(id, result, "Inventory tags could not be updated.");
+        }
+
+        if (IsAjaxRequest())
+        {
+            return Ok(new
+            {
+                success = true,
+                message = "Inventory tags autosaved.",
+                count = model.TagForm.TagIds.Distinct().Count()
+            });
         }
 
         SetSuccessMessage("Inventory tags updated.");
@@ -306,7 +352,18 @@ public class InventoryController : AppController
         var result = await _inventoryFacade.UpdateAccessAsync(id, model.AccessForm, cancellationToken);
         if (!result.IsSuccess)
         {
-            return RedirectToInventoryDetailsForFailure(id, result, "Access settings could not be updated.");
+            return BuildInventoryDetailsFailureResponse(id, result, "Access settings could not be updated.");
+        }
+
+        if (IsAjaxRequest())
+        {
+            return Ok(new
+            {
+                success = true,
+                message = "Access settings autosaved.",
+                count = model.AccessForm.UserIds.Where(x => x != Guid.Empty).Distinct().Count(),
+                isPublic = model.AccessForm.IsPublic
+            });
         }
 
         SetSuccessMessage("Access settings updated.");
@@ -578,5 +635,24 @@ public class InventoryController : AppController
     {
         TempData["ErrorMessage"] = result.ErrorMessage ?? fallbackMessage;
         return RedirectToAction(nameof(Details), new { id = inventoryId });
+    }
+
+    private bool IsAjaxRequest() =>
+        string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+    private IActionResult BuildInventoryDetailsFailureResponse(Guid inventoryId, ApiCallResult result, string fallbackMessage)
+    {
+        if (IsAjaxRequest())
+        {
+            return StatusCode(
+                result.StatusCode > 0 ? result.StatusCode : StatusCodes.Status400BadRequest,
+                new
+                {
+                    success = false,
+                    message = result.ErrorMessage ?? fallbackMessage
+                });
+        }
+
+        return RedirectToInventoryDetailsForFailure(inventoryId, result, fallbackMessage);
     }
 }

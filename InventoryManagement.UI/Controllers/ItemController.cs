@@ -94,6 +94,43 @@ public class ItemController : AppController
             return RedirectToAction("Login", "Account");
         }
 
+        if (model.UploadedImages.Count > 0)
+        {
+            var maxDisplayOrder = model.Images.Count == 0 ? 0 : model.Images.Max(x => x.DisplayOrder);
+            foreach (var uploadedImage in model.UploadedImages.Where(x => x is not null && x.Length > 0))
+            {
+                var uploadResult = await _inventoryFacade.UploadItemImageAsync(uploadedImage, cancellationToken);
+                if (!uploadResult.IsSuccess || uploadResult.Value is null)
+                {
+                    ModelState.AddModelError(string.Empty, uploadResult.ErrorMessage ?? "Item image could not be uploaded.");
+                    return View(model);
+                }
+
+                model.Images.Add(new ItemImageInputModel
+                {
+                    ImageUrl = uploadResult.Value.Url,
+                    DisplayOrder = ++maxDisplayOrder,
+                    IsPrimary = model.Images.Count == 0
+                });
+            }
+        }
+
+        model.Images = model.Images
+            .Where(x => !string.IsNullOrWhiteSpace(x.ImageUrl))
+            .GroupBy(x => x.ImageUrl.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(group => group
+                .OrderByDescending(x => x.IsPrimary)
+                .ThenBy(x => x.DisplayOrder)
+                .First())
+            .Select((image, index) => new ItemImageInputModel
+            {
+                ImageUrl = image.ImageUrl.Trim(),
+                Caption = image.Caption,
+                DisplayOrder = index + 1,
+                IsPrimary = image.IsPrimary
+            })
+            .ToList();
+
         var updateResult = await _inventoryFacade.UpdateItemAsync(model, cancellationToken);
         if (!updateResult.IsSuccess)
         {
@@ -105,6 +142,13 @@ public class ItemController : AppController
         if (!valuesResult.IsSuccess)
         {
             ModelState.AddModelError(string.Empty, valuesResult.ErrorMessage ?? "Item values could not be saved.");
+            return View(model);
+        }
+
+        var imageResult = await _inventoryFacade.SaveItemImagesAsync(model.Item.Id, model.Images, cancellationToken);
+        if (!imageResult.IsSuccess)
+        {
+            ModelState.AddModelError(string.Empty, imageResult.ErrorMessage ?? "Item images could not be saved.");
             return View(model);
         }
 

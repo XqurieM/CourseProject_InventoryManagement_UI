@@ -48,8 +48,17 @@ public sealed class ItemDetailsPageViewModel
     public string InventoryTitle { get; set; } = string.Empty;
     public bool CanWriteItems { get; set; }
     public ItemDto Item { get; set; } = new();
+    public List<ItemImageInputModel> Images { get; set; } = new();
     public List<ItemFieldValueDisplayViewModel> FieldValues { get; set; } = new();
     public string? HelperText { get; set; }
+}
+
+public sealed class ItemImageInputModel
+{
+    public string ImageUrl { get; set; } = string.Empty;
+    public string? Caption { get; set; }
+    public int DisplayOrder { get; set; }
+    public bool IsPrimary { get; set; }
 }
 
 public sealed class ItemFieldValueInputModel
@@ -75,6 +84,8 @@ public sealed class ItemEditPageViewModel
     public string ItemName { get; set; } = string.Empty;
     public string CustomId { get; set; } = string.Empty;
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+    public List<ItemImageInputModel> Images { get; set; } = new();
+    public List<IFormFile> UploadedImages { get; set; } = new();
     public List<ItemFieldValueInputModel> Fields { get; set; } = new();
     public string? HelperText { get; set; }
 }

@@ -122,7 +122,10 @@ public sealed class AuthenticationFacade : IAuthenticationFacade
     public Task<ApiCallResult<int>> RevokeAllRefreshTokensAsync(CancellationToken cancellationToken = default) =>
         _backendApiClient.PostAsync<RevokeAllRefreshTokensCommand, int>(
             "Auth/RevokeAllRefreshTokens",
-            new RevokeAllRefreshTokensCommand(),
+            new RevokeAllRefreshTokensCommand
+            {
+                CurrentRefreshToken = _userSessionService.GetTokens()?.RefreshToken
+            },
             requiresAuth: true,
             cancellationToken);
 

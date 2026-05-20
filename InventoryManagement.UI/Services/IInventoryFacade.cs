@@ -41,8 +41,10 @@ public interface IInventoryFacade
     Task<ApiCallResult<ItemEditPageViewModel>> GetItemEditPageAsync(Guid inventoryId, Guid itemId, CancellationToken cancellationToken = default);
     Task<ApiCallResult<BatchItemEditPageViewModel>> GetBatchItemEditPageAsync(Guid inventoryId, IReadOnlyCollection<Guid> itemIds, CancellationToken cancellationToken = default);
     Task<ApiCallResult<ItemDetailsPageViewModel>> GetItemDetailsAsync(Guid inventoryId, Guid itemId, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<UploadedFileResultDto>> UploadItemImageAsync(IFormFile file, CancellationToken cancellationToken = default);
     Task<ApiCallResult<List<Guid>>> AddItemsAsync(Guid inventoryId, IReadOnlyCollection<string> itemNames, CancellationToken cancellationToken = default);
     Task<ApiCallResult<Guid>> UpdateItemAsync(ItemEditPageViewModel model, CancellationToken cancellationToken = default);
+    Task<ApiCallResult> SaveItemImagesAsync(Guid itemId, IReadOnlyCollection<ItemImageInputModel> images, CancellationToken cancellationToken = default);
     Task<ApiCallResult> DeleteItemAsync(Guid itemId, CancellationToken cancellationToken = default);
     Task<ApiCallResult> SaveItemFieldValuesAsync(Guid itemId, IReadOnlyCollection<ItemFieldValueInputModel> fields, CancellationToken cancellationToken = default);
     Task<ApiCallResult> SaveBatchItemFieldValuesAsync(BatchItemEditPageViewModel model, CancellationToken cancellationToken = default);

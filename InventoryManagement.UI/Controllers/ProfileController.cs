@@ -80,7 +80,7 @@ public class ProfileController : AppController
             return RedirectForFailure(result, fallbackAction: nameof(Index), fallbackController: "Profile");
         }
 
-        SetSuccessMessage("All active sessions were revoked.");
+        SetSuccessMessage("All other active sessions were revoked.");
         return RedirectToAction(nameof(Index));
     }
 }

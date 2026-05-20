@@ -19,6 +19,24 @@
                         <a class="btn btn-outline-secondary btn-sm" asp-controller="Inventory" asp-action="Details" asp-route-id="@Model.InventoryId">Back</a>
                     </div>
                 </div>
+                @if (Model.Images.Count > 0)
+                {
+                    var coverImage = Model.Images.OrderByDescending(x => x.IsPrimary).ThenBy(x => x.DisplayOrder).First();
+                    <div class="mb-3">
+                        <img src="@coverImage.ImageUrl" alt="@Model.Item.ItemName" class="img-fluid rounded border item-detail-cover mb-2" />
+                        @if (Model.Images.Count > 1)
+                        {
+                            <div class="item-detail-thumb-grid">
+                                @foreach (var image in Model.Images.OrderBy(x => x.DisplayOrder))
+                                {
+                                    <a href="@image.ImageUrl" target="_blank" rel="noopener noreferrer" class="item-detail-thumb-link">
+                                        <img src="@image.ImageUrl" alt="@image.Caption" class="item-detail-thumb @(image.IsPrimary ? "item-detail-thumb-primary" : string.Empty)" />
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <span class="badge @(Model.Item.IsLikedByCurrentUser ? "text-bg-danger" : "text-bg-light") px-3 py-2">
                         <i class="fa-solid fa-heart me-1"></i>@Model.Item.LikeCount like(s)
@@ -37,6 +55,8 @@
                     <dd class="col-sm-7"><code>@Model.Item.CustomId</code></dd>
                     <dt class="col-sm-5">Name</dt>
                     <dd class="col-sm-7">@Model.Item.ItemName</dd>
+                    <dt class="col-sm-5">Photos</dt>
+                    <dd class="col-sm-7">@Model.Images.Count</dd>
                     <dt class="col-sm-5">Created</dt>
                     <dd class="col-sm-7">@Model.Item.CreateAtUtc.ToLocalTime().ToString("g")</dd>
                     <dt class="col-sm-5">Updated</dt>

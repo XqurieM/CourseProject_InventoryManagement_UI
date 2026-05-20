@@ -9,15 +9,18 @@ public sealed class UiLocalizationService : IUiLocalizationService
     private readonly BackendApiClient _backendApiClient;
     private readonly IUserSessionService _userSessionService;
     private readonly IMemoryCache _memoryCache;
+    private readonly ILogger<UiLocalizationService> _logger;
 
     public UiLocalizationService(
         BackendApiClient backendApiClient,
         IUserSessionService userSessionService,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache,
+        ILogger<UiLocalizationService> logger)
     {
         _backendApiClient = backendApiClient;
         _userSessionService = userSessionService;
         _memoryCache = memoryCache;
+        _logger = logger;
     }
 
     public async Task<UiLocalizationViewModel> GetForRequestAsync(HttpContext httpContext, CancellationToken cancellationToken = default)
@@ -70,14 +73,23 @@ public sealed class UiLocalizationService : IUiLocalizationService
             return cached;
         }
 
-        var result = await _backendApiClient.GetAsync<GetLocalizationResourcesResult>(
-            $"General/GetLocalizationResources?languageCode={Uri.EscapeDataString(languageCode)}&pageName={Uri.EscapeDataString(pageName)}",
-            requiresAuth: false,
-            cancellationToken);
+        Dictionary<string, string> resources;
+        try
+        {
+            var result = await _backendApiClient.GetAsync<GetLocalizationResourcesResult>(
+                $"General/GetLocalizationResources?languageCode={Uri.EscapeDataString(languageCode)}&pageName={Uri.EscapeDataString(pageName)}",
+                requiresAuth: false,
+                cancellationToken);
 
-        var resources = result.IsSuccess && result.Value is not null
-            ? new Dictionary<string, string>(result.Value.Resources, StringComparer.OrdinalIgnoreCase)
-            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            resources = result.IsSuccess && result.Value is not null
+                ? new Dictionary<string, string>(result.Value.Resources, StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Localization resources could not be loaded for language '{LanguageCode}' and page '{PageName}'. Falling back to empty resources.", languageCode, pageName);
+            resources = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
 
         _memoryCache.Set(cacheKey, resources, TimeSpan.FromMinutes(10));
         return resources;
