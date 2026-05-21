@@ -8,10 +8,12 @@ namespace InventoryManagement.UI.Controllers;
 public class AccountController : AppController
 {
     private readonly IAuthenticationFacade _authenticationFacade;
+    private readonly IUserSessionService _userSessionService;
 
-    public AccountController(IAuthenticationFacade authenticationFacade)
+    public AccountController(IAuthenticationFacade authenticationFacade, IUserSessionService userSessionService)
     {
         _authenticationFacade = authenticationFacade;
+        _userSessionService = userSessionService;
     }
 
     [HttpGet]
@@ -159,5 +161,21 @@ public class AccountController : AppController
     public IActionResult MicrosoftCallback()
     {
         return View();
+    }
+
+    [HttpGet]
+    public IActionResult ChangeLanguage(string lang, string returnUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(lang))
+        {
+            _userSessionService.SetLanguageCode(lang);
+        }
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        return RedirectToAction("Login");
     }
 }

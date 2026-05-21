@@ -1,6 +1,8 @@
 @model RegisterPageViewModel
 @{
     Layout = null;
+    var state = ViewData["LocalizationState"] as UiLocalizationViewModel;
+    var currentLang = state?.LanguageCode ?? "tr";
 }
 <!DOCTYPE html>
 <html lang="@(((ViewData["LocalizationState"] as UiLocalizationViewModel)?.LanguageCode) ?? "tr")">
@@ -16,6 +18,12 @@
             <div class="col-md-6">
                 <div class="card shadow border-0 rounded-4">
                     <div class="card-body p-5">
+                        <div class="d-flex justify-content-end mb-3">
+                            <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Language Selector">
+                                <a href="@Url.Action("ChangeLanguage", "Account", new { lang = "tr", returnUrl = Context.Request.Path })" class="btn @(currentLang == "tr" ? "btn-primary" : "btn-outline-primary")">TR</a>
+                                <a href="@Url.Action("ChangeLanguage", "Account", new { lang = "en", returnUrl = Context.Request.Path })" class="btn @(currentLang == "en" ? "btn-primary" : "btn-outline-primary")">EN</a>
+                            </div>
+                        </div>
                         <h2>@Html.T("hero.title", "Create account")</h2>
                         <p class="text-muted">@Html.T("hero.subtitle", "Register with the backend auth service.")</p>
                         @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))

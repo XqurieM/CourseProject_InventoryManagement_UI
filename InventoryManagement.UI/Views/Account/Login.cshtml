@@ -5,6 +5,9 @@
     var microsoftClientId = Configuration["MicrosoftLogin:ClientId"] ?? string.Empty;
     var microsoftTenantId = Configuration["MicrosoftLogin:TenantId"] ?? string.Empty;
     var isMicrosoftLoginConfigured = !string.IsNullOrWhiteSpace(microsoftClientId) && !string.IsNullOrWhiteSpace(microsoftTenantId);
+
+    var state = ViewData["LocalizationState"] as UiLocalizationViewModel;
+    var currentLang = state?.LanguageCode ?? "tr";
 }
 <!DOCTYPE html>
 <html lang="@(((ViewData["LocalizationState"] as UiLocalizationViewModel)?.LanguageCode) ?? "tr")">
@@ -27,6 +30,12 @@
             <div class="col-md-5">
                 <div class="card login-card">
                     <div class="card-body p-5">
+                        <div class="d-flex justify-content-end mb-3">
+                            <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Language Selector">
+                                <a href="@Url.Action("ChangeLanguage", "Account", new { lang = "tr", returnUrl = Context.Request.Path })" class="btn @(currentLang == "tr" ? "btn-primary" : "btn-outline-primary")">TR</a>
+                                <a href="@Url.Action("ChangeLanguage", "Account", new { lang = "en", returnUrl = Context.Request.Path })" class="btn @(currentLang == "en" ? "btn-primary" : "btn-outline-primary")">EN</a>
+                            </div>
+                        </div>
                         <h2 class="fw-bold mb-1">@Html.T("hero.title", "Welcome back")</h2>
                         <p class="text-muted">@Html.T("hero.subtitle", "Sign in to manage inventories.")</p>
 

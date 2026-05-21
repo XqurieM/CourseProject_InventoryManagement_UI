@@ -39,7 +39,7 @@ public sealed class UserSessionService : IUserSessionService
         var session = GetSession();
         session.Remove(TokensKey);
         session.Remove(UserKey);
-        session.Remove(LanguageCodeKey);
+        // session.Remove(LanguageCodeKey); 
     }
 
     private T? Read<T>(string key)
