@@ -22,16 +22,30 @@
                 @if (Model.Images.Count > 0)
                 {
                     var coverImage = Model.Images.OrderByDescending(x => x.IsPrimary).ThenBy(x => x.DisplayOrder).First();
+                    var sortedImagesForThumb = Model.Images.OrderBy(x => x.DisplayOrder).ToList();
+                    var coverIndex = sortedImagesForThumb.IndexOf(coverImage);
+                    if (coverIndex < 0) coverIndex = 0;
+
                     <div class="mb-3">
-                        <img src="@coverImage.ImageUrl" alt="@Model.Item.ItemName" class="img-fluid rounded border item-detail-cover mb-2" />
+                        <div class="position-relative item-detail-cover-container shadow-sm rounded overflow-hidden" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#lightboxModal" data-bs-slide-to="@coverIndex">
+                            <img id="mainCoverImage" src="@coverImage.ImageUrl" alt="@Model.Item.ItemName" class="img-fluid w-100" style="object-fit: cover; height: 320px; transition: all 0.3s ease;" />
+                            <div class="position-absolute bottom-0 end-0 m-2 bg-dark bg-opacity-75 text-white px-2 py-1 rounded small">
+                                <i class="fa-solid fa-magnifying-glass-plus me-1"></i> Zoom
+                            </div>
+                        </div>
                         @if (Model.Images.Count > 1)
                         {
-                            <div class="item-detail-thumb-grid">
-                                @foreach (var image in Model.Images.OrderBy(x => x.DisplayOrder))
+                            <div class="d-flex gap-2 overflow-x-auto py-2" style="scrollbar-width: thin;">
+                                @for (int i = 0; i < sortedImagesForThumb.Count; i++)
                                 {
-                                    <a href="@image.ImageUrl" target="_blank" rel="noopener noreferrer" class="item-detail-thumb-link">
-                                        <img src="@image.ImageUrl" alt="@image.Caption" class="item-detail-thumb @(image.IsPrimary ? "item-detail-thumb-primary" : string.Empty)" />
-                                    </a>
+                                    var image = sortedImagesForThumb[i];
+                                    <div class="item-detail-thumb-wrapper" style="width: 64px; height: 64px; flex-shrink: 0; cursor: pointer;">
+                                        <img src="@image.ImageUrl" 
+                                             alt="@image.Caption" 
+                                             class="img-thumbnail w-100 h-100 @(image.ImageUrl == coverImage.ImageUrl ? "border-primary border-2 shadow-sm" : "")" 
+                                             style="object-fit: cover; transition: border-color 0.2s;"
+                                             onclick="changeCoverImage('@image.ImageUrl', @i, this)" />
+                                    </div>
                                 }
                             </div>
                         }
@@ -124,3 +138,104 @@
         </div>
     </div>
 </div>
+
+@if (Model.Images.Count > 0)
+{
+    var sortedImages = Model.Images.OrderBy(x => x.DisplayOrder).ToList();
+    
+    <!-- Lightbox Modal -->
+    <div class="modal fade" id="lightboxModal" tabindex="-1" aria-labelledby="lightboxModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-dark text-white border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0 justify-content-between">
+                    <h5 class="modal-title font-monospace small text-uppercase tracking-wider" id="lightboxModalLabel">@Model.Item.ItemName - Gallery</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 d-flex align-items-center justify-content-center" style="min-height: 450px; background-color: #0b0b0b;">
+                    <div id="galleryCarousel" class="carousel slide w-100" data-bs-ride="false">
+                        <div class="carousel-indicators">
+                            @for (int i = 0; i < sortedImages.Count; i++)
+                            {
+                                <button type="button" data-bs-target="#galleryCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : "false")" aria-label="Slide @(i + 1)"></button>
+                            }
+                        </div>
+                        <div class="carousel-inner">
+                            @for (int i = 0; i < sortedImages.Count; i++)
+                            {
+                                var image = sortedImages[i];
+                                <div class="carousel-item @(i == 0 ? "active" : "") text-center py-4">
+                                    <img src="@image.ImageUrl" class="d-inline-block img-fluid rounded" style="max-height: 65vh; object-fit: contain;" alt="@image.Caption">
+                                    @if (!string.IsNullOrWhiteSpace(image.Caption))
+                                    {
+                                        <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-75 rounded-3 py-2 px-3 mx-auto shadow-sm" style="max-width: 80%; bottom: 20px;">
+                                            <p class="mb-0 text-white">@image.Caption</p>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        @if (sortedImages.Count > 1)
+                        {
+                            <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function changeCoverImage(url, index, element) {
+            const coverImg = document.getElementById('mainCoverImage');
+            if (coverImg) {
+                coverImg.style.opacity = '0.5';
+                setTimeout(() => {
+                    coverImg.src = url;
+                    coverImg.style.opacity = '1';
+                }, 150);
+            }
+            
+            const coverContainer = document.querySelector('.item-detail-cover-container');
+            if (coverContainer) {
+                coverContainer.setAttribute('data-bs-slide-to', index);
+            }
+            
+            const thumbnails = document.querySelectorAll('.item-detail-thumb-wrapper img');
+            thumbnails.forEach(thumb => {
+                thumb.classList.remove('border-primary', 'border-2', 'shadow-sm');
+            });
+            
+            if (element) {
+                element.classList.add('border-primary', 'border-2', 'shadow-sm');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const lightboxModal = document.getElementById('lightboxModal');
+            if (lightboxModal) {
+                lightboxModal.addEventListener('show.bs.modal', function (event) {
+                    const triggerElement = event.relatedTarget || document.querySelector('.item-detail-cover-container');
+                    if (triggerElement) {
+                        const slideToIndex = triggerElement.getAttribute('data-bs-slide-to');
+                        const carouselEl = document.getElementById('galleryCarousel');
+                        if (carouselEl) {
+                            const carousel = bootstrap.Carousel.getOrCreateInstance(carouselEl);
+                            if (carousel) {
+                                carousel.to(parseInt(slideToIndex || '0'));
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}

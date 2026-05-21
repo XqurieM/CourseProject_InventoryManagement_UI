@@ -31,39 +31,7 @@
                 </form>
             </div>
         </div>
-        <div class="card mt-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Active Sessions</h5>
-                <span class="badge text-bg-primary">@Model.ActiveSessions.Count</span>
-            </div>
-            <div class="card-body">
-                @if (Model.ActiveSessions.Count == 0)
-                {
-                    <div class="text-muted small">No active refresh-token sessions were returned.</div>
-                }
-                else
-                {
-                    <div class="d-grid gap-2 mb-3">
-                        @foreach (var session in Model.ActiveSessions.OrderByDescending(x => x.CreatedAtUtc))
-                        {
-                            <div class="border rounded p-2 small">
-                                <div class="fw-semibold">@session.TokenPreview</div>
-                                <div class="text-muted">Created @session.CreatedAtUtc.ToLocalTime().ToString("g")</div>
-                                <div class="text-muted">Expires @session.ExpiresAtUtc.ToLocalTime().ToString("g")</div>
-                                @if (session.IsRevoked && session.RevokedAtUtc.HasValue)
-                                {
-                                    <div class="text-danger">Revoked @session.RevokedAtUtc.Value.ToLocalTime().ToString("g")</div>
-                                }
-                            </div>
-                        }
-                    </div>
-                }
-                <form asp-action="RevokeAllSessions" method="post">
-                    @Html.AntiForgeryToken()
-                    <button class="btn btn-outline-danger w-100" type="submit">Revoke other sessions</button>
-                </form>
-            </div>
-        </div>
+
     </div>
     <div class="col-lg-8">
         @if (!string.IsNullOrWhiteSpace(Model.InventoryNote))
