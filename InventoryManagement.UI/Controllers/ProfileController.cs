@@ -1,6 +1,7 @@
 using InventoryManagement.UI.Models;
 using InventoryManagement.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using CourseProject_InventoryManagement.Application.Features.CQRS.Commands.UserCommands;
 
 namespace InventoryManagement.UI.Controllers;
 
@@ -81,6 +82,27 @@ public class ProfileController : AppController
         }
 
         SetSuccessMessage("All other active sessions were revoked.");
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> IntegrateSalesforce(IntegrateSalesforceCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _authenticationFacade.IntegrateSalesforceAsync(command, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return RedirectForFailure(result, fallbackAction: nameof(Index), fallbackController: "Profile");
+        }
+
+        var sessionService = HttpContext.RequestServices.GetRequiredService<IUserSessionService>();
+        bool isEnglish = sessionService.GetUser()?.PreferredLanguage == CourseProject_InventoryManagement.Domain.Enums.LanguageType.English;
+
+        string msg = isEnglish 
+            ? $"Salesforce Integration Completed Successfully! Account ID: {result.Value?.AccountId}, Contact ID: {result.Value?.ContactId}"
+            : $"Salesforce Entegrasyonu Başarıyla Tamamlandı! Hesap ID: {result.Value?.AccountId}, İletişim ID: {result.Value?.ContactId}";
+
+        SetSuccessMessage(msg);
         return RedirectToAction(nameof(Index));
     }
 }

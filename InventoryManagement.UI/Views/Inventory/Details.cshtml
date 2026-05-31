@@ -1,5 +1,6 @@
 @model InventoryDetailsPageViewModel
 @inject Microsoft.Extensions.Options.IOptions<InventoryManagement.UI.Options.BackendApiOptions> BackendApiOptions
+@inject InventoryManagement.UI.Services.IUserSessionService UserSessionService
 @{
     ViewData["Title"] = "Inventory Workspace";
     var commentHubUrl = $"{BackendApiOptions.Value.BaseUrl.TrimEnd('/')}/commentHub";
@@ -88,6 +89,7 @@
             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#customid">Custom ID</button></li>
             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#access">Access</button></li>
             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#discussion">Discussion</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#odoo">Odoo</button></li>
         </ul>
     </div>
     <div class="card-body tab-content">
@@ -951,6 +953,139 @@
                     </div>
                 </div>
             }
+        </div>
+        <div class="tab-pane fade" id="odoo">
+            @{
+                var userLang = UserSessionService.GetUser()?.PreferredLanguage;
+                bool isEng = userLang == CourseProject_InventoryManagement.Domain.Enums.LanguageType.English;
+            }
+            
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-4">
+                            <h4 class="text-primary mb-3"><i class="fa-solid fa-cube me-2"></i>@(isEng ? "Odoo ERP/CRM Integration" : "Odoo ERP/CRM Entegrasyonu")</h4>
+                            <p class="text-muted small">
+                                @(isEng 
+                                    ? "This integration exposes a public read-only API endpoint for Odoo to import your inventory fields and dynamic custom statistics (averages, min/max for numbers, frequencies for text, and true/false counts for booleans)." 
+                                    : "Bu entegrasyon, Odoo ERP/CRM sisteminin envanter alanlarınızı ve dinamik toplu istatistikleri (ortalama, sayısal alanlar için min/max, metinler için frekanslar ve boolean değerleri için true/false sayımları) otomatik olarak içe aktarması için genel, salt okunur bir API ucu sunar.")
+                            </p>
+                            
+                            <hr class="my-4" />
+                            
+                            @if (!Model.Inventory.CanManageInventory)
+                            {
+                                <div class="alert alert-warning border-0">
+                                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                    @(isEng 
+                                        ? "Only the inventory managers can view or regenerate the Odoo integration token." 
+                                        : "Odoo entegrasyon anahtarını sadece envanter yöneticileri görüntüleyebilir ve yenileyebilir.")
+                                </div>
+                            }
+                            else
+                            {
+                                @if (string.IsNullOrWhiteSpace(Model.Inventory.ApiToken))
+                                {
+                                    <div class="alert alert-info border-0 mb-4 bg-primary bg-opacity-10 text-primary">
+                                        <i class="fa-solid fa-info-circle me-2"></i>
+                                        @(isEng 
+                                            ? "No integration token has been generated for this inventory yet. Click the button below to generate a unique shareable API Token." 
+                                            : "Bu envanter için henüz bir entegrasyon anahtarı üretilmemiş. Benzersiz ve paylaşılabilir bir API Anahtarı üretmek için aşağıdaki butona basın.")
+                                    </div>
+                                    
+                                    <form asp-action="GenerateApiToken" asp-route-id="@Model.Inventory.Id" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa-solid fa-key me-1"></i> @(isEng ? "Generate Integration Token" : "Entegrasyon Anahtarı Üret")
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <div class="mb-4">
+                                        <label class="form-label small fw-semibold text-primary">@(isEng ? "Integration Token (Shareable)" : "Entegrasyon Anahtarı (Paylaşılabilir)")</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fa-solid fa-key text-muted"></i></span>
+                                            <input type="text" id="odooTokenInput" class="form-control font-monospace bg-white" value="@Model.Inventory.ApiToken" readonly />
+                                            <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText('@Model.Inventory.ApiToken'); alert('@(isEng ? "Token copied to clipboard!" : "Anahtar panoya kopyalandı!")');">
+                                                <i class="fa-solid fa-copy me-1"></i> @(isEng ? "Copy" : "Kopyala")
+                                            </button>
+                                        </div>
+                                        <div class="form-text text-muted small mt-1">
+                                            @(isEng 
+                                                ? "Provide this unique token to your Odoo instance. Anyone with access to this token can read the aggregated results." 
+                                                : "Bu benzersiz anahtarı Odoo uygulamanıza girin. Bu anahtara sahip olan herkes envanter özet sonuçlarını okuyabilir.")
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        @{
+                                            var aggregatedUrl = $"{BackendApiOptions.Value.BaseUrl.TrimEnd('/')}/Inventory/GetOdooAggregatedResults?token={Model.Inventory.ApiToken}";
+                                        }
+                                        <label class="form-label small fw-semibold text-primary">@(isEng ? "Odoo Integration API URL" : "Odoo Entegrasyon API Adresi")</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fa-solid fa-link text-muted"></i></span>
+                                            <input type="text" id="odooUrlInput" class="form-control font-monospace bg-white" value="@aggregatedUrl" readonly />
+                                            <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText('@aggregatedUrl'); alert('@(isEng ? "URL copied to clipboard!" : "API Adresi panoya kopyalandı!")');">
+                                                <i class="fa-solid fa-copy me-1"></i> @(isEng ? "Copy URL" : "Linki Kopyala")
+                                            </button>
+                                        </div>
+                                        <div class="form-text text-muted small mt-1">
+                                            @(isEng 
+                                                ? "Odoo will make a HTTP GET request to this URL to pull inventory stats dynamically." 
+                                                : "Odoo, envanter istatistiklerini dinamik olarak çekmek için bu adrese HTTP GET isteği gönderecektir.")
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4 pt-3 border-top">
+                                        <form asp-action="GenerateApiToken" asp-route-id="@Model.Inventory.Id" method="post" onsubmit="return confirm('@(isEng ? "Are you sure you want to regenerate this token? The previous token will stop working immediately!" : "Bu anahtarı yenilemek istediğinize emin misiniz? Önceki anahtar anında çalışmayı durduracaktır!")');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-danger">
+                                                <i class="fa-solid fa-arrows-rotate me-1"></i> @(isEng ? "Regenerate (Rotate) Token" : "Anahtarı Yenile (Değiştir)")
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card bg-light border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-info me-2"></i>@(isEng ? "Developer Docs" : "Geliştirici Notları")</h5>
+                            <p class="small text-muted">
+                                @(isEng 
+                                    ? "The JSON response returned by the API contains aggregated field statistics:" 
+                                    : "API tarafından dönen JSON formatındaki özet veri yapısı şunları içerir:")
+                            </p>
+                            <ul class="small text-muted ps-3 mb-3">
+                                <li><b>Number</b>: <code>MinValue</code>, <code>MaxValue</code>, <code>AverageValue</code></li>
+                                <li><b>Text</b>: <code>MostPopularValues</code> (Top 3 values with counts)</li>
+                                <li><b>Boolean</b>: <code>TrueCount</code>, <code>FalseCount</code></li>
+                            </ul>
+                            <div class="bg-dark text-white rounded p-3 font-monospace small" style="max-height: 250px; overflow-y: auto;">
+{
+  "inventoryId": "@Model.Inventory.Id",
+  "title": "@Model.Inventory.Title",
+  "totalItems": @Model.Statistics.ItemCount,
+  "fields": [
+    {
+      "fieldId": "uuid",
+      "name": "Price",
+      "fieldType": "Number",
+      "minValue": 10.0,
+      "maxValue": 500.0,
+      "averageValue": 255.0
+    }
+  ]
+}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

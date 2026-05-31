@@ -655,4 +655,23 @@ public class InventoryController : AppController
 
         return RedirectToInventoryDetailsForFailure(inventoryId, result, fallbackMessage);
     }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateApiToken(Guid id, CancellationToken cancellationToken)
+    {
+        if (!_authenticationFacade.IsSignedIn)
+        {
+            return RedirectToAction("Login", "Account");
+        }
+
+        var result = await _inventoryFacade.GenerateApiTokenAsync(id, cancellationToken);
+        if (!result.IsSuccess || string.IsNullOrEmpty(result.Value))
+        {
+            return RedirectToInventoryDetailsForFailure(id, result, "Odoo integration token could not be generated.");
+        }
+
+        SetSuccessMessage("Odoo integration token generated/rotated successfully!");
+        return RedirectToAction(nameof(Details), new { id });
+    }
 }

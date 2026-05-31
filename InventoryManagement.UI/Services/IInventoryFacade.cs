@@ -51,4 +51,5 @@ public interface IInventoryFacade
     Task<ApiCallResult<List<TagDto>>> GetAllTagsAsync(CancellationToken cancellationToken = default);
     Task<ApiCallResult<GlobalSearchResult>> GetGlobalSearchAsync(string? query, CancellationToken cancellationToken = default);
     Task<ApiCallResult<bool>> ToggleItemLikeAsync(Guid itemId, CancellationToken cancellationToken = default);
+    Task<ApiCallResult<string>> GenerateApiTokenAsync(Guid inventoryId, CancellationToken cancellationToken = default);
 }

@@ -129,6 +129,15 @@ public sealed class AuthenticationFacade : IAuthenticationFacade
             requiresAuth: true,
             cancellationToken);
 
+    public Task<ApiCallResult<SalesforceIntegrationResultDto>> IntegrateSalesforceAsync(
+        IntegrateSalesforceCommand command,
+        CancellationToken cancellationToken = default) =>
+        _backendApiClient.PostAsync<IntegrateSalesforceCommand, SalesforceIntegrationResultDto>(
+            "Auth/IntegrateSalesforce",
+            command,
+            requiresAuth: true,
+            cancellationToken);
+
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
         var tokens = _userSessionService.GetTokens();

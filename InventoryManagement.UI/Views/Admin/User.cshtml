@@ -1,6 +1,7 @@
 @model AdminUserDetailsPageViewModel
 @{
     ViewData["Title"] = "Admin User Details";
+    bool isEnglish = Model.User.PreferredLanguage == LanguageType.English;
 }
 
 <div class="row g-3">
@@ -87,8 +88,116 @@
                         <input type="hidden" name="userId" value="@Model.User.Id" />
                         <button class="btn btn-outline-danger" type="submit">Delete</button>
                     </form>
+                    <button class="btn btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#adminSalesforceModal">
+                        <i class="fa-solid fa-cloud-arrow-up me-1"></i> @(isEnglish ? "Salesforce Integration" : "Salesforce Entegrasyonu")
+                    </button>
                 </div>
                 <a class="btn btn-link px-0 mt-3" asp-action="Users">Back to users</a>
+            </div>
+        </div>
+        
+        <!-- Salesforce Integration Modal for Admin -->
+        <div class="modal fade" id="adminSalesforceModal" tabindex="-1" aria-labelledby="adminSalesforceModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <form asp-action="IntegrateSalesforce" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="UserId" value="@Model.User.Id" />
+                        
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title d-flex align-items-center gap-2" id="adminSalesforceModalLabel">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> @(isEnglish ? "Salesforce CRM Integration (Admin)" : "Salesforce CRM Entegrasyonu (Yönetici)")
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        
+                        <div class="modal-body p-4">
+                            <div class="alert alert-info border-0 mb-4 bg-info bg-opacity-10 text-info small">
+                                <i class="fa-solid fa-circle-info me-2"></i>
+                                @(isEnglish 
+                                    ? $"This operation creates an Account along with a linked Contact on Salesforce on behalf of the selected user ({Model.User.UserName})." 
+                                    : $"Bu işlem, seçilen kullanıcı ({Model.User.UserName}) adına Salesforce üzerinde bağlantılı bir İletişim Kişisi (Contact) ile birlikte bir Hesap (Account) oluşturur.")
+                            </div>
+                            
+                            <h6 class="text-info border-bottom pb-2 mb-3 fw-bold"><i class="fa-solid fa-building me-2"></i>@(isEnglish ? "Account Information (Account)" : "Hesap Bilgileri (Account)")</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "Account Name *" : "Hesap Adı *")</label>
+                                    <input type="text" name="AccountName" class="form-control" value="@Model.User.UserName" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "Account Phone" : "Hesap Telefonu")</label>
+                                    <input type="tel" name="AccountPhone" class="form-control" placeholder="+90 555 123 4567" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "Street / Address" : "Sokak / Adres")</label>
+                                    <input type="text" name="BillingStreet" class="form-control" placeholder="@(isEnglish ? "e.g. Street, Apt No: 5" : "Örn: Caddesi, Sokak No: 5")" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "City" : "Şehir (City)")</label>
+                                    <input type="text" name="BillingCity" class="form-control" placeholder="@(isEnglish ? "e.g. London" : "Örn: Istanbul")" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "State / Province" : "Eyalet / İl (State)")</label>
+                                    <input type="text" name="BillingState" class="form-control" placeholder="@(isEnglish ? "e.g. Ontario" : "Örn: Marmara")" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "Postal Code" : "Posta Kodu")</label>
+                                    <input type="text" name="BillingPostalCode" class="form-control" placeholder="34000" />
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "Country *" : "Ülke *")</label>
+                                    <select name="BillingCountry" class="form-select" required>
+                                        <option value="">@(isEnglish ? "Select Country..." : "Ülke Seçin...")</option>
+                                        <option value="TR" selected>@(isEnglish ? "Turkey (TR)" : "Türkiye (TR)")</option>
+                                        <option value="US">@(isEnglish ? "United States (US)" : "Amerika Birleşik Devletleri (US)")</option>
+                                        <option value="GB">@(isEnglish ? "United Kingdom (GB)" : "Birleşik Krallık (GB)")</option>
+                                        <option value="DE">@(isEnglish ? "Germany (DE)" : "Almanya (DE)")</option>
+                                        <option value="FR">@(isEnglish ? "France (FR)" : "Fransa (FR)")</option>
+                                        <option value="IT">@(isEnglish ? "Italy (IT)" : "İtalya (IT)")</option>
+                                        <option value="ES">@(isEnglish ? "Spain (ES)" : "İspanya (ES)")</option>
+                                        <option value="CA">@(isEnglish ? "Canada (CA)" : "Kanada (CA)")</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <h6 class="text-info border-bottom pb-2 mb-3 fw-bold"><i class="fa-solid fa-address-card me-2"></i>@(isEnglish ? "Contact Information (Contact)" : "İletişim Bilgileri (Contact)")</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "First Name *" : "Adı *")</label>
+                                    <input type="text" name="FirstName" class="form-control" value="@Model.User.UserName" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "Last Name *" : "Soyadı *")</label>
+                                    <input type="text" name="LastName" class="form-control" value="CRM" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "Email Address *" : "E-posta Adresi *")</label>
+                                    <input type="email" name="Email" class="form-control" value="@Model.User.Email" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "Phone Number" : "Telefon Numarası")</label>
+                                    <input type="tel" name="ContactPhone" class="form-control" placeholder="+90 555 123 4567" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "Job Title" : "Ünvan / Job Title")</label>
+                                    <input type="text" name="JobTitle" class="form-control" placeholder="@(isEnglish ? "e.g. Software Developer" : "Örn: Yazılım Geliştirici")" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">@(isEnglish ? "Department" : "Departman")</label>
+                                    <input type="text" name="Department" class="form-control" placeholder="@(isEnglish ? "e.g. Information Technology" : "Örn: Bilgi Teknolojileri")" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@(isEnglish ? "Close" : "Kapat")</button>
+                            <button type="submit" class="btn btn-info text-white">
+                                <i class="fa-solid fa-cloud-arrow-up me-1"></i> @(isEnglish ? "Submit to Salesforce" : "Salesforce'a Gönder")
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

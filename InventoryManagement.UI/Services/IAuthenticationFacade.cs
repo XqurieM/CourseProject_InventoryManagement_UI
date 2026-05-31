@@ -1,5 +1,6 @@
 using CourseProject_InventoryManagement.Application.DTOs;
 using CourseProject_InventoryManagement.Application.Features.CQRS.Commands.AuthCommands;
+using CourseProject_InventoryManagement.Application.Features.CQRS.Commands.UserCommands;
 using CourseProject_InventoryManagement.Domain.Enums;
 using InventoryManagement.UI.Models;
 
@@ -18,5 +19,6 @@ public interface IAuthenticationFacade
     Task<ApiCallResult<UserDto>> UpdateLanguageAsync(LanguageType language, CancellationToken cancellationToken = default);
     Task<ApiCallResult<UserDto>> UpdateThemeAsync(ThemeType theme, CancellationToken cancellationToken = default);
     Task<ApiCallResult<int>> RevokeAllRefreshTokensAsync(CancellationToken cancellationToken = default);
+    Task<ApiCallResult<SalesforceIntegrationResultDto>> IntegrateSalesforceAsync(IntegrateSalesforceCommand command, CancellationToken cancellationToken = default);
     Task LogoutAsync(CancellationToken cancellationToken = default);
 }

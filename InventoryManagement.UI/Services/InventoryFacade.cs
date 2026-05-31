@@ -1231,4 +1231,13 @@ public sealed class InventoryFacade : IInventoryFacade
                 StringValue = string.IsNullOrWhiteSpace(input.StringValue) ? null : input.StringValue.Trim()
             }
         };
+
+    public async Task<ApiCallResult<string>> GenerateApiTokenAsync(Guid inventoryId, CancellationToken cancellationToken = default)
+    {
+        return await _backendApiClient.PostAsync<object, string>(
+            $"Inventory/GenerateApiToken/{inventoryId}",
+            new { },
+            requiresAuth: true,
+            cancellationToken);
+    }
 }
